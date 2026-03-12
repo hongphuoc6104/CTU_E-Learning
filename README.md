@@ -49,38 +49,53 @@ Hệ thống được chia làm 3 luồng chính, tương ứng với 3 đối t
 
 ## 🏁 Hướng dẫn cài đặt chi tiết cho người mới
 
-Để chạy được website này trên máy tính của bạn (Localhost), hãy làm theo từng bước sau. Đảm bảo bạn làm đúng thứ tự.
+Để chạy được website này, bạn có thể chọn **Cách 1 (Sử dụng Docker - Khuyên dùng)** hoặc **Cách 2 (Sử dụng XAMPP)**.
 
-### Bước 1: Chuẩn bị môi trường (Cài XAMPP)
+### Cách 1: Chạy bằng Docker (Khuyên dùng)
+Hệ thống đã được tích hợp sẵn Docker giúp bạn khởi chạy ngay lập tức mà không cần cấu hình môi trường hay import Database thủ công.
+1. Cài đặt phần mềm **[Docker Desktop](https://www.docker.com/products/docker-desktop/)**.
+2. Mở Terminal (Command Prompt / PowerShell) tại thư mục gốc dự án (Nơi chứa file `docker-compose.yml`).
+3. Chạy lệnh sau để khởi động toàn bộ hệ thống:
+   ```bash
+   docker-compose up -d
+   ```
+4. Đợi một lát cho các dịch vụ khởi động xong. Bây giờ mọi thứ đã sẵn sàng:
+   - **Trang chủ học viên**: Truy cập vào `http://localhost:8080/`
+   - **Trang quản trị (Admin)**: Truy cập vào `http://localhost:8080/Admin/`
+   - **Trình quản lý CSDL (phpMyAdmin)**: `http://localhost:8081/`
+
+*(Lưu ý: Nếu muốn dừng server, chạy lệnh `docker-compose down`)*
+
+---
+
+### Cách 2: Sử dụng phần mềm XAMPP
+Nếu bạn không cài Docker, bạn có thể dùng XAMPP để chạy PHP.
+
+#### Bước 1: Chuẩn bị môi trường (Cài XAMPP)
 1. Tải phần mềm **XAMPP** từ [apachefriends.org](https://www.apachefriends.org/) (Khuyên dùng bản PHP 7.4 hoặc 8.x).
-2. Cài đặt vào máy (thường ở `C:\xampp` trên Windows hoặc `/opt/lampp` trên Linux).
-3. Mở **XAMPP Control Panel**, nhấn **Start** cho 2 module là `Apache` (Web server chạy PHP) và `MySQL` (Máy chủ cơ sở dữ liệu). Khi cả 2 chuyển màu xanh lá là thành công.
+2. Cài đặt vào máy và mở **XAMPP Control Panel**, nhấn **Start** cho `Apache` và `MySQL`.
 
-### Bước 2: Đặt mã nguồn đúng chỗ
-XAMPP chỉ chạy được code PHP nếu code nằm trong thư mục `htdocs`.
+#### Bước 2: Đặt mã nguồn đúng chỗ
+XAMPP chỉ chạy code PHP khi đặt trong thư mục `htdocs`.
 1. Copy thư mục `ELearning` của dự án này.
-2. Dán thư mục `ELearning` vào bên trong thư mục `htdocs` của XAMPP:
-   - Trên **Windows**: Dán vào `C:\xampp\htdocs\ELearning\`
-   - Trên **Mac**: Dán vào `/Applications/XAMPP/xamppfiles/htdocs/ELearning/`
-   - Trên **Linux**: Dán vào `/opt/lampp/htdocs/ELearning/`
+2. Dán thư mục `ELearning` vào mục `htdocs` của XAMPP:
+   - Trên **Windows**: `C:\xampp\htdocs\ELearning\`
+   - Trên **Mac**: `/Applications/XAMPP/xamppfiles/htdocs/ELearning/`
 
-### Bước 3: Thiết lập Cơ sở dữ liệu (Database)
-Code PHP cần có dữ liệu để hiển thị. Bạn phải "nhập" (import) CSDL mẫu vào máy bạn:
-1. Mở trình duyệt web (Chrome/Edge), gõ địa chỉ: `http://localhost/phpmyadmin`
-2. Nhấn vào nút **New** (hoặc Mới) ở cột bên trái để tạo Database mới.
-3. Ở ô *Tên cơ sở dữ liệu* (Database name), điền chính xác: **`lms_db`**
-4. Ở ô bên cạnh (Bảng mã / Collation), chọn `utf8mb4_general_ci` (để hỗ trợ tiếng Việt có dấu). Nhấn **Create** (Tạo).
-5. Nhấn vào database `lms_db` vừa tạo ở cột trái. Nhìn lên menu trên cùng, chọn tab **Import** (Nhập).
-6. Nhấn nút **Choose File** (Chọn tệp), tìm đến file `lms_db.sql` (nằm trong thư mục `SQL/` của code bạn tải về).
-7. Cuộn xuống dưới cùng, nhấn **Go** (Thực hiện). *Làm tương tự bước 5-6-7 với file `cart_table.sql` để import thêm bảng giỏ hàng.*
+#### Bước 3: Thiết lập Cơ sở dữ liệu (Database)
+Bạn cần tạo Database và import dữ liệu mẫu để web có thể chạy:
+1. Mở trình duyệt web, gõ địa chỉ: `http://localhost/phpmyadmin`
+2. Nhấn vào nút **New** (hoặc Mới). Tạo cơ sở dữ liệu mới với tên: **`lms_db`** (Bảng mã `utf8mb4_general_ci`).
+3. Chọn database `lms_db` vừa tạo, bấm tab **Import** (Nhập).
+4. Nhấn **Choose File**, tìm đến thư mục `SQL/` của dự án và chọn file `lms_db.sql`. Nhấn **Go**.
+5. Làm tương tự bước Import với file `cart_table.sql` để có bảng giao dịch.
 
-### Bước 4: Kiểm tra File cấu hình kết nối
-Hệ thống cần biết mật khẩu MySQL của máy bạn để kết nối. File quy định điều này là `ELearning/dbConnection.php`.
-- Mặc định XAMPP **không có mật khẩu** MySQL. File `dbConnection.php` đã được set sẵn `$db_password = "";`, nên thường bạn **không cần sửa gì**.
-- *Nếu máy bạn có cài pass MySQL riêng, hãy mở file đó lên và sửa.*
+#### Bước 4: Kiểm tra File cấu hình
+- File kết nối CSDL hiện tại mặc định là `$db_password = "";` cho XAMPP.
+- Nếu XAMPP của bạn có đặt mật khẩu MySQL, hãy vào file `ELearning/dbConnection.php` để bổ sung mật khẩu.
 
-### Bước 5: Chạy dự án!
-Bây giờ mọi thứ đã sẵn sàng:
+#### Bước 5: Chạy dự án!
+Mọi thứ đã sẵn sàng:
 - **Trang chủ học viên**: Truy cập vào `http://localhost/ELearning/`
 - **Trang quản trị (Admin)**: Truy cập vào `http://localhost/ELearning/Admin/`
 
