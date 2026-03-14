@@ -9,25 +9,19 @@ if(!isset($_SESSION['is_admin_login'])){
     echo "<script>location.href='../index.php';</script>";
 }
 
-// Delete course
+// Soft-delete course
 if(isset($_POST['delete_course'])){
     $cid = (int)$_POST['cid'];
-    $r = $conn->query("DELETE FROM course WHERE course_id=$cid");
-    if(!$r) {
-        $msg_err = ($conn->errno == 1451)
-            ? 'Không thể xoá: khoá học này đã có bài học hoặc giao dịch liên quan!'
-            : 'Lỗi khi xoá khoá học.';
-    } else {
-        echo "<script>location.href='courses.php';</script>"; exit;
-    }
+    $conn->query("UPDATE course SET is_deleted=1 WHERE course_id=$cid");
+    echo "<script>location.href='courses.php';</script>"; exit;
 }
 
 // Search
 $search = trim($_GET['q'] ?? '');
 $sql = "SELECT c.*, (SELECT COUNT(*) FROM lesson l WHERE l.course_id=c.course_id) as lesson_count,
-               (SELECT COUNT(*) FROM courseorder o WHERE o.course_id=c.course_id) as order_count
-        FROM course c";
-if($search) $sql .= " WHERE c.course_name LIKE '%".addslashes($search)."%' OR c.course_author LIKE '%".addslashes($search)."%'";
+               (SELECT COUNT(*) FROM courseorder o WHERE o.course_id=c.course_id AND o.is_deleted=0) as order_count
+        FROM course c WHERE c.is_deleted = 0";
+if($search) $sql .= " AND (c.course_name LIKE '%".addslashes($search)."%' OR c.course_author LIKE '%".addslashes($search)."%')";
 $sql .= " ORDER BY c.course_id DESC";
 $result = $conn->query($sql);
 ?>
@@ -49,9 +43,7 @@ $result = $conn->query($sql);
   </a>
 </div>
 
-<?php if(isset($msg_err)): ?>
-<div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm"><?php echo $msg_err; ?></div>
-<?php endif; ?>
+
 
 <!-- Table -->
 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

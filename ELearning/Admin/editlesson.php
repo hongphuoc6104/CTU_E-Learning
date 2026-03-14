@@ -39,7 +39,7 @@ if(isset($_POST['editLessonBtn'])){
     }
 }
 
-$courses = $conn->query("SELECT course_id, course_name FROM course ORDER BY course_name");
+$courses = $conn->query("SELECT course_id, course_name FROM course WHERE is_deleted=0 ORDER BY course_name");
 ?>
 
 <div class="max-w-xl">

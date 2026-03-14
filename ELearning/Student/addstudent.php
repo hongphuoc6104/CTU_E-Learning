@@ -21,7 +21,8 @@ if(isset($_POST['stuemail']) && isset($_POST['checkemail'])){
     $stuname = $_POST['stuname'];
     $stuemail = $_POST['stuemail'];
     $stupass = $_POST['stupass'];
-    $sql = "INSERT INTO student(stu_name, stu_email, stu_pass, stu_occ, stu_img) VALUES ('$stuname', '$stuemail', '$stupass', '', '')";
+    $hashed_pass = password_hash($stupass, PASSWORD_DEFAULT);
+    $sql = "INSERT INTO student(stu_name, stu_email, stu_pass, stu_occ, stu_img) VALUES ('$stuname', '$stuemail', '$hashed_pass', '', '')";
     if($conn->query($sql) == TRUE){
       echo json_encode("OK");
     } else {
@@ -34,16 +35,25 @@ if(isset($_POST['stuemail']) && isset($_POST['checkemail'])){
     if(isset($_POST['checkLogemail']) && isset($_POST['stuLogEmail']) && isset($_POST['stuLogPass'])){
       $stuLogEmail = $_POST['stuLogEmail'];
       $stuLogPass = $_POST['stuLogPass'];
-      $sql = "SELECT stu_email, stu_pass FROM student WHERE stu_email='".$stuLogEmail."' AND stu_pass='".$stuLogPass."'";
+      $sql = "SELECT stu_email, stu_pass FROM student WHERE stu_email='".$stuLogEmail."'";
       $result = $conn->query($sql);
-      $row = $result->num_rows;
       
-      if($row === 1){
-        $_SESSION['is_login'] = true;
-        $_SESSION['stuLogEmail'] = $stuLogEmail;
-        echo json_encode($row);
-      } else if($row === 0) {
-        echo json_encode($row);
+      if($result->num_rows === 1){
+        $row = $result->fetch_assoc();
+        // Check hash or fallback to plain text (for existing users)
+        if(password_verify($stuLogPass, $row['stu_pass']) || $stuLogPass === $row['stu_pass']) {
+          if($stuLogPass === $row['stu_pass'] && !password_verify($stuLogPass, $row['stu_pass'])) {
+            $hashed = password_hash($stuLogPass, PASSWORD_DEFAULT);
+            $conn->query("UPDATE student SET stu_pass='$hashed' WHERE stu_email='$stuLogEmail'");
+          }
+          $_SESSION['is_login'] = true;
+          $_SESSION['stuLogEmail'] = $stuLogEmail;
+          echo json_encode(1);
+        } else {
+          echo json_encode(0);
+        }
+      } else {
+        echo json_encode(0);
       }
     }
   }

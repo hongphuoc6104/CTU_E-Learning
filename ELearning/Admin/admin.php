@@ -11,16 +11,24 @@ header('Content-type: application/json');
    if(isset($_POST['checkLogemail']) && isset($_POST['adminLogEmail']) && isset($_POST['adminLogPass'])){
      $adminLogEmail = $_POST['adminLogEmail'];
      $adminLogPass = $_POST['adminLogPass'];
-     $sql = "SELECT admin_email, admin_pass FROM admin WHERE admin_email='".$adminLogEmail."' AND admin_pass='".$adminLogPass."'";
+     $sql = "SELECT admin_email, admin_pass FROM admin WHERE admin_email='".$adminLogEmail."'";
      $result = $conn->query($sql);
-     $row = $result->num_rows;
      
-     if($row === 1){
-       $_SESSION['is_admin_login'] = true;
-       $_SESSION['adminLogEmail'] = $adminLogEmail;
-       echo json_encode($row);
-     } else if($row === 0) {
-       echo json_encode($row);
+     if($result->num_rows === 1){
+       $row = $result->fetch_assoc();
+       if(password_verify($adminLogPass, $row['admin_pass']) || $adminLogPass === $row['admin_pass']) {
+         if($adminLogPass === $row['admin_pass'] && !password_verify($adminLogPass, $row['admin_pass'])) {
+           $hashed = password_hash($adminLogPass, PASSWORD_DEFAULT);
+           $conn->query("UPDATE admin SET admin_pass='$hashed' WHERE admin_email='$adminLogEmail'");
+         }
+         $_SESSION['is_admin_login'] = true;
+         $_SESSION['adminLogEmail'] = $adminLogEmail;
+         echo json_encode(1);
+       } else {
+         echo json_encode(0);
+       }
+     } else {
+       echo json_encode(0);
      }
    }
  } else {

@@ -28,14 +28,14 @@ include_once('../dbConnection.php');
         $sql = "SELECT co.order_id, c.course_id, c.course_name, c.course_duration, c.course_desc, c.course_img, c.course_author, c.course_original_price, c.course_price, co.order_date 
                 FROM courseorder AS co 
                 JOIN course AS c ON c.course_id = co.course_id 
-                WHERE co.stu_email = '$stuLogEmail'
+                WHERE co.stu_email = '$stuLogEmail' AND co.is_deleted=0 AND c.is_deleted=0
                 ORDER BY co.order_date DESC";
         $result = $conn->query($sql);
         
         if($result->num_rows > 0): ?>
         <div class="space-y-5">
         <?php while($row = $result->fetch_assoc()): 
-            $img_src = str_replace('..', '.', $row['course_img']);
+            $img_src = "../" . ltrim(str_replace('../', '', $row['course_img']), '/');
         ?>
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all flex flex-col md:flex-row">
             <!-- Course image -->

@@ -43,7 +43,7 @@ if(!isset($_SESSION['stuLogEmail'])) {
           $count++;
         }
         // Clear student's cart after successful purchase
-        $del_sql = "DELETE FROM cart WHERE stu_email = '$stu_email'";
+        $del_sql = "UPDATE cart SET is_deleted = 1 WHERE stu_email = '$stu_email'";
         $conn->query($del_sql);
         $success = true;
       }
@@ -58,7 +58,7 @@ if(!isset($_SESSION['stuLogEmail'])) {
           if($conn->query($sql_insert) == TRUE){
             $success = true;
             // Dọn dẹp giỏ hàng nếu khoá này tình cờ đang nằm trong đó
-            $del_single_sql = "DELETE FROM cart WHERE stu_email = '$stu_email' AND course_id = '$course_id'";
+            $del_single_sql = "UPDATE cart SET is_deleted=1 WHERE stu_email = '$stu_email' AND course_id = '$course_id'";
             $conn->query($del_single_sql);
           }
         } else {

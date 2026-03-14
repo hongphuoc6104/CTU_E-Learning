@@ -26,7 +26,7 @@ $stuEmail = $_SESSION['stuLogEmail'];
     $sql = "SELECT c.cart_id, course.course_id, course.course_name, course.course_price, course.course_original_price, course.course_img 
             FROM cart c 
             JOIN course ON c.course_id = course.course_id 
-            WHERE c.stu_email = '$stuEmail'";
+            WHERE c.stu_email = '$stuEmail' AND c.is_deleted=0 AND course.is_deleted=0";
     $result = $conn->query($sql);
     $total = 0;
     
@@ -37,7 +37,7 @@ $stuEmail = $_SESSION['stuLogEmail'];
         <div class="divide-y divide-slate-100">
         <?php while($row = $result->fetch_assoc()): 
             $total += $row['course_price'];
-            $img_src = $row['course_img']; // path đã đúng relative từ Student/
+            $img_src = "../" . ltrim(str_replace('../', '', $row['course_img']), '/');
         ?>
         <div class="flex items-center gap-5 p-6 hover:bg-slate-50/50 transition-colors group">
             <!-- Course Image -->

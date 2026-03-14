@@ -10,20 +10,20 @@ if(!isset($_SESSION['is_admin_login'])){
 }
 
 // Stats
-$totalCourse  = $conn->query("SELECT COUNT(*) as c FROM course")->fetch_assoc()['c'];
-$totalStu     = $conn->query("SELECT COUNT(*) as c FROM student")->fetch_assoc()['c'];
-$totalOrders  = $conn->query("SELECT COUNT(*) as c FROM courseorder")->fetch_assoc()['c'];
-$totalRevenue = $conn->query("SELECT COALESCE(SUM(amount),0) as s FROM courseorder")->fetch_assoc()['s'];
+$totalCourse  = $conn->query("SELECT COUNT(*) as c FROM course WHERE is_deleted=0")->fetch_assoc()['c'];
+$totalStu     = $conn->query("SELECT COUNT(*) as c FROM student WHERE is_deleted=0")->fetch_assoc()['c'];
+$totalOrders  = $conn->query("SELECT COUNT(*) as c FROM courseorder WHERE is_deleted=0")->fetch_assoc()['c'];
+$totalRevenue = $conn->query("SELECT COALESCE(SUM(amount),0) as s FROM courseorder WHERE is_deleted=0")->fetch_assoc()['s'];
 
 // Delete order
 if(isset($_POST['delete_order'])){
     $oid = (int)$_POST['oid'];
-    $conn->query("DELETE FROM courseorder WHERE co_id=$oid");
+    $conn->query("UPDATE courseorder SET is_deleted=1 WHERE co_id=$oid");
     echo "<script>location.href='adminDashboard.php';</script>"; exit;
 }
 
-// Recent orders
-$recent = $conn->query("SELECT co.*, c.course_name FROM courseorder co LEFT JOIN course c ON co.course_id=c.course_id ORDER BY co.order_date DESC LIMIT 10");
+// Recent orders (only non-deleted)
+$recent = $conn->query("SELECT co.*, c.course_name FROM courseorder co LEFT JOIN course c ON co.course_id=c.course_id WHERE co.is_deleted=0 ORDER BY co.order_date DESC LIMIT 10");
 ?>
 
 <!-- Stats Cards -->

@@ -22,7 +22,8 @@ include_once('../dbConnection.php');
     $result = $conn->query($sql);
     if($result->num_rows == 1){
      $stuPass = $_REQUEST['stuNewPass'];
-     $sql = "UPDATE student SET stu_pass = '$stuPass' WHERE stu_email = '$stuEmail'";
+     $hashedPass = password_hash($stuPass, PASSWORD_DEFAULT);
+     $sql = "UPDATE student SET stu_pass = '$hashedPass' WHERE stu_email = '$stuEmail'";
       if($conn->query($sql) == TRUE){
        // below msg display on form submit success
        $passmsg = '<div class="alert alert-success col-sm-6 ml-5 mt-2" role="alert"> Updated Successfully </div>';

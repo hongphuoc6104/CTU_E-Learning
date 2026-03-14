@@ -21,7 +21,7 @@ include_once('../dbConnection.php');
 }
 
 // Lấy danh sách khóa học đã mua để có thể gắn đánh giá theo khóa học
-$courses_sql = "SELECT c.course_id, c.course_name FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail'";
+$courses_sql = "SELECT c.course_id, c.course_name FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail' AND co.is_deleted=0 AND c.is_deleted=0";
 $courses_result = $conn->query($courses_sql);
 
 $passmsg = '';

@@ -22,11 +22,11 @@
           if(isset($_GET['course_id'])){
            $course_id = $_GET['course_id'];
            $_SESSION['course_id'] = $course_id;
-           $sql = "SELECT * FROM course WHERE course_id = '$course_id'";
+           $sql = "SELECT * FROM course WHERE course_id = '$course_id' AND is_deleted=0";
           $result = $conn->query($sql);
           if($result->num_rows > 0){ 
             while($row = $result->fetch_assoc()){
-                $img_path = str_replace('..', '.', $row['course_img']);
+                $img_path = ltrim(str_replace('../', '', $row['course_img']), '/');
                 $price = number_format($row['course_price']);
                 $original_price = number_format($row['course_original_price']);
               echo ' 
@@ -43,22 +43,50 @@
                             <span>Thời lượng: '.$row['course_duration'].'</span>
                         </div>
                         
+                        <!-- Actions & Price -->
                         <div class="flex items-end gap-4 border-t border-slate-100 pt-8 mb-8">
                             <p class="text-4xl font-black text-red-600 m-0 leading-none">'.$price.' đ</p>
                             <p class="text-lg text-slate-400 line-through m-0 font-medium">'.$original_price.' đ</p>
                         </div>
                         
                         <div class="flex flex-wrap gap-4 mt-auto">
-                            <button type="button" class="px-6 py-3.5 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-colors flex items-center gap-2" onclick="addToCart('.$course_id.')">
-                                <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                            </button>
-                            <form action="checkout.php" method="post" class="m-0 flex-grow max-w-[200px]">
-                              <input type="hidden" name="id" value="'.$row['course_price'].'"> 
-                              <input type="hidden" name="checkout_type" value="single">
-                              <button type="submit" class="w-full h-full px-6 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" name="buy">
-                                  Đăng ký ngay <i class="fas fa-arrow-right"></i>
-                              </button>
-                            </form>
+                            ';
+                            // Check if already purchased
+                            $isPurchased = false;
+                            if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
+                                $stuEmail = $_SESSION['stuLogEmail'];
+                                $checkSql = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
+                                $checkRes = $conn->query($checkSql);
+                                if($checkRes && $checkRes->num_rows > 0){
+                                    $isPurchased = true;
+                                }
+                            }
+
+                            if($isPurchased){
+                                echo '
+                                <a href="Student/watchcourse.php?course_id='.$course_id.'" class="w-full md:w-auto px-8 py-3.5 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 No-underline">
+                                    <i class="fas fa-play-circle text-lg"></i> Học ngay
+                                </a>
+                                <div class="flex items-center text-green-600 font-semibold gap-2 ml-4">
+                                    <i class="fas fa-check-circle"></i> Đã sở hữu khoá học
+                                </div>
+                                ';
+                            } else {
+                                echo '
+                                <button type="button" class="px-6 py-3.5 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-colors flex items-center gap-2" onclick="addToCart('.$course_id.')">
+                                    <i class="fas fa-cart-plus"></i> Thêm vào giỏ
+                                </button>
+                                <form action="checkout.php" method="post" class="m-0 flex-grow max-w-[200px]">
+                                  <input type="hidden" name="id" value="'.$row['course_price'].'"> 
+                                  <input type="hidden" name="checkout_type" value="single">
+                                  <button type="submit" class="w-full h-full px-6 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" name="buy">
+                                      Đăng ký ngay <i class="fas fa-arrow-right"></i>
+                                  </button>
+                                </form>
+                                ';
+                            }
+                            
+                            echo '
                         </div>
                     </div>
                 </div>';

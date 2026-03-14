@@ -12,11 +12,11 @@ if(!isset($_SESSION['is_admin_login'])){
 // Delete feedback
 if(isset($_POST['delete_fb'])){
     $fid = (int)$_POST['fid'];
-    $conn->query("DELETE FROM feedback WHERE f_id=$fid");
+    $conn->query("UPDATE feedback SET is_deleted=1 WHERE f_id=$fid");
     echo "<script>location.href='feedback.php';</script>"; exit;
 }
 
-$result = $conn->query("SELECT f.*, s.stu_name, s.stu_email FROM feedback f LEFT JOIN student s ON f.stu_id=s.stu_id ORDER BY f.f_id DESC");
+$result = $conn->query("SELECT f.*, s.stu_name, s.stu_email FROM feedback f LEFT JOIN student s ON f.stu_id=s.stu_id WHERE f.is_deleted=0 ORDER BY f.f_id DESC");
 ?>
 
 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">

@@ -19,24 +19,43 @@
         
         <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
         <?php
-            $sql = "SELECT * FROM course";
+            $sql = "SELECT * FROM course WHERE is_deleted=0";
             $result = $conn->query($sql);
             if($result->num_rows > 0){ 
                 while($row = $result->fetch_assoc()){
                 $course_id = $row['course_id'];
-                $img_path = str_replace('..', '.', $row['course_img']);
+                $img_path = ltrim(str_replace('../', '', $row['course_img']), '/');
                 $price = number_format($row['course_price']);
                 $original_price = number_format($row['course_original_price']);
                 
+                // Check if already purchased
+                $isPurchased = false;
+                if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
+                    $stuEmail = $_SESSION['stuLogEmail'];
+                    $checkSql = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
+                    $checkRes = $conn->query($checkSql);
+                    if($checkRes && $checkRes->num_rows > 0){
+                        $isPurchased = true;
+                    }
+                }
+
                 echo '
                     <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col h-full relative">
                         <a href="coursedetails.php?course_id='.$course_id.'" class="aspect-video relative overflow-hidden block shrink-0">
                             <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="'.$img_path.'"/>
                             <div class="absolute inset-0 bg-primary/20 bg-opacity-0 transition-opacity"></div>
                         </a>
-                        <button onclick="addToCart('.$course_id.'); return false;" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full text-primary hover:bg-primary hover:text-white shadow-sm transition-colors cursor-pointer border-0 z-10 opacity-70 hover:opacity-100">
-                            <i class="fas fa-shopping-cart text-[15px] block w-[15px] h-[15px] flex items-center justify-center"></i>
-                        </button>
+                        ';
+                        if(!$isPurchased){
+                            echo '<button onclick="addToCart('.$course_id.'); return false;" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full text-primary hover:bg-primary hover:text-white shadow-sm transition-colors cursor-pointer border-0 z-10 opacity-70 hover:opacity-100">
+                                <i class="fas fa-shopping-cart text-[15px] block w-[15px] h-[15px] flex items-center justify-center"></i>
+                            </button>';
+                        } else {
+                            echo '<div class="absolute top-4 right-4 px-3 py-1 bg-green-500/90 backdrop-blur rounded-full text-white text-[11px] font-bold shadow-sm z-10 flex items-center gap-1">
+                                <i class="fas fa-check-circle"></i> Đã sở hữu
+                            </div>';
+                        }
+                        echo '
                         <div class="p-5 flex flex-col flex-grow">
                             <h3 class="text-base font-bold text-slate-900 mb-2 line-clamp-2 leading-snug">'.$row['course_name'].'</h3>
                             <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed flex-grow">'.$row['course_desc'].'</p>
@@ -45,9 +64,17 @@
                                     <p class="text-[11px] text-slate-400 line-through m-0">'.$original_price.' đ</p>
                                     <p class="text-lg font-black text-red-600 m-0 leading-none mt-1">'.$price.' đ</p>
                                 </div>
-                                <a href="coursedetails.php?course_id='.$course_id.'" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all no-underline shrink-0">
-                                    Chi tiết
-                                </a>
+                                ';
+                                if($isPurchased){
+                                    echo '<a href="Student/watchcourse.php?course_id='.$course_id.'" class="px-4 py-2 bg-green-50 text-green-600 text-xs font-bold rounded-lg hover:bg-green-500 hover:text-white transition-all no-underline shrink-0 flex items-center gap-1.5">
+                                        <i class="fas fa-play"></i> Học ngay
+                                    </a>';
+                                } else {
+                                    echo '<a href="coursedetails.php?course_id='.$course_id.'" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg hover:bg-primary hover:text-white transition-all no-underline shrink-0">
+                                        Chi tiết
+                                    </a>';
+                                }
+                                echo '
                             </div>
                         </div>
                     </div>

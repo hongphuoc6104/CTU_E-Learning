@@ -19,19 +19,19 @@ if($searched){
             FROM courseorder co
             LEFT JOIN course c ON co.course_id=c.course_id
             LEFT JOIN student s ON co.stu_email=s.stu_email
-            WHERE co.order_date BETWEEN ? AND ?
+            WHERE co.order_date BETWEEN ? AND ? AND co.is_deleted=0
             ORDER BY co.order_date DESC";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ss', $startdate, $enddate);
     $stmt->execute();
     $result = $stmt->get_result();
-    $sum = $conn->query("SELECT COALESCE(SUM(amount),0) as s FROM courseorder WHERE order_date BETWEEN '$startdate' AND '$enddate'");
+    $sum = $conn->query("SELECT COALESCE(SUM(amount),0) as s FROM courseorder WHERE order_date BETWEEN '$startdate' AND '$enddate' AND is_deleted=0");
     $total = $sum->fetch_assoc()['s'];
 }
 ?>
 
 <!-- Date filter -->
-<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6">
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 print:hidden">
   <form method="POST" class="flex flex-wrap items-end gap-4">
     <div>
       <label class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Từ ngày</label>
@@ -59,57 +59,57 @@ if($searched){
 <?php if($searched): ?>
 <!-- Summary -->
 <div class="grid grid-cols-2 gap-4 mb-6">
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4">
-    <div class="w-11 h-11 bg-blue-500/10 rounded-xl flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4 print:border-none print:shadow-none print:p-2">
+    <div class="w-11 h-11 bg-blue-500/10 rounded-xl flex items-center justify-center print:hidden">
       <i class="fas fa-receipt text-blue-500"></i>
     </div>
     <div>
-      <p class="text-xs text-slate-400">Số giao dịch</p>
-      <p class="text-2xl font-black text-slate-900"><?php echo $result->num_rows; ?></p>
+      <p class="text-xs text-slate-400 print:text-black">Số giao dịch</p>
+      <p class="text-2xl font-black text-slate-900 print:text-lg"><?php echo $result->num_rows; ?></p>
     </div>
   </div>
-  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4">
-    <div class="w-11 h-11 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4 print:border-none print:shadow-none print:p-2">
+    <div class="w-11 h-11 bg-emerald-500/10 rounded-xl flex items-center justify-center print:hidden">
       <i class="fas fa-coins text-emerald-500"></i>
     </div>
     <div>
-      <p class="text-xs text-slate-400">Tổng doanh thu</p>
-      <p class="text-2xl font-black text-primary"><?php echo number_format($total); ?> đ</p>
+      <p class="text-xs text-slate-400 print:text-black">Tổng doanh thu</p>
+      <p class="text-2xl font-black text-primary print:text-lg"><?php echo number_format($total); ?> đ</p>
     </div>
   </div>
 </div>
 
 <!-- Table -->
-<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-  <div class="overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden print:border-none print:shadow-none">
+  <div class="overflow-x-auto print:overflow-visible">
+    <table class="w-full text-sm print:text-xs">
+      <thead class="bg-slate-50 text-xs text-slate-500 uppercase print:bg-transparent print:text-black print:border-b print:border-black">
         <tr>
-          <th class="px-6 py-3 text-left">Mã đơn</th>
-          <th class="px-6 py-3 text-left">Khoá học</th>
-          <th class="px-6 py-3 text-left">Học viên</th>
-          <th class="px-6 py-3 text-left">Ngày</th>
-          <th class="px-6 py-3 text-left">Trạng thái</th>
-          <th class="px-6 py-3 text-right">Số tiền</th>
+          <th class="px-6 py-3 text-left print:px-2 print:py-2">Mã đơn</th>
+          <th class="px-6 py-3 text-left print:px-2 print:py-2">Khoá học</th>
+          <th class="px-6 py-3 text-left print:px-2 print:py-2">Học viên</th>
+          <th class="px-6 py-3 text-left print:px-2 print:py-2">Ngày</th>
+          <th class="px-6 py-3 text-left print:px-2 print:py-2">Trạng thái</th>
+          <th class="px-6 py-3 text-right print:px-2 print:py-2">Số tiền</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="divide-y divide-slate-100 print:divide-slate-300">
       <?php if($result->num_rows > 0): $result->data_seek(0); while($r = $result->fetch_assoc()): ?>
-        <tr class="hover:bg-slate-50">
-          <td class="px-6 py-3 font-mono text-xs text-slate-400"><?php echo htmlspecialchars($r['order_id']); ?></td>
-          <td class="px-6 py-3 font-medium text-slate-800"><?php echo htmlspecialchars($r['course_name'] ?? '—'); ?></td>
-          <td class="px-6 py-3 text-slate-500">
+        <tr class="hover:bg-slate-50 print:hover:bg-transparent">
+          <td class="px-6 py-3 font-mono text-xs text-slate-400 print:px-2 print:py-2 print:text-black"><?php echo htmlspecialchars($r['order_id']); ?></td>
+          <td class="px-6 py-3 font-medium text-slate-800 print:px-2 print:py-2 print:text-black"><?php echo htmlspecialchars($r['course_name'] ?? '—'); ?></td>
+          <td class="px-6 py-3 text-slate-500 print:px-2 print:py-2 print:text-black">
             <div><?php echo htmlspecialchars($r['stu_name'] ?? ''); ?></div>
-            <div class="text-xs text-slate-400"><?php echo htmlspecialchars($r['stu_email']); ?></div>
+            <div class="text-xs text-slate-400 print:text-black"><?php echo htmlspecialchars($r['stu_email']); ?></div>
           </td>
-          <td class="px-6 py-3 text-slate-500"><?php echo $r['order_date']; ?></td>
-          <td class="px-6 py-3">
-            <span class="px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700"><?php echo htmlspecialchars($r['status']); ?></span>
+          <td class="px-6 py-3 text-slate-500 print:px-2 print:py-2 print:text-black"><?php echo $r['order_date']; ?></td>
+          <td class="px-6 py-3 print:px-2 print:py-2">
+            <span class="px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 print:bg-transparent print:p-0 print:text-black"><?php echo htmlspecialchars($r['status']); ?></span>
           </td>
-          <td class="px-6 py-3 text-right font-bold text-primary"><?php echo number_format($r['amount']); ?> đ</td>
+          <td class="px-6 py-3 text-right font-bold text-primary print:px-2 print:py-2 print:text-black"><?php echo number_format($r['amount']); ?> đ</td>
         </tr>
       <?php endwhile; else: ?>
-        <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">Không có giao dịch nào trong khoảng thời gian này.</td></tr>
+        <tr><td colspan="6" class="px-6 py-10 text-center text-slate-400 print:text-black">Không có giao dịch nào trong khoảng thời gian này.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>

@@ -3,42 +3,58 @@
   // Header Include from mainInclude 
   include('./mainInclude/header.php'); 
 ?>
-    <div class="container-fluid bg-dark"> <!-- Start Course Page Banner -->
-      <div class="row">
-        <img src="./image/coursebanner.jpg" alt="courses" style="height:300px; width:100%; object-fit:cover; box-shadow:10px;"/>
-      </div> 
-    </div> <!-- End Course Page Banner -->
+    <div class="pt-32 pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('image/coursebanner.jpg')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+        <div class="absolute inset-0 bg-primary/40"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
+            <h1 class="text-4xl md:text-5xl font-black text-white mb-4">Đăng ký</h1>
+            <p class="text-lg text-white/80 max-w-2xl mx-auto">Tạo tài khoản ngay hôm nay để truy cập hàng trăm khóa học chất lượng.</p>
+        </div>
+    </div>
 
-    <div class="container mt-5 mb-5">
-     <div class="row justify-content-center">
-      <div class="col-md-6">
-        <div class="bg-white shadow-sm rounded p-4">
-          <h5 class="mb-4 text-primary font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Đăng ký tài khoản mới</h5>
-          <form role="form" id="stuRegForm">
-            <div class="form-group">
-              <i class="fas fa-user"></i><label for="stuname" class="pl-2 font-weight-bold">Họ và tên</label><small id="statusMsg1"></small>
-              <input type="text" class="form-control" placeholder="Nhập họ tên" name="stuname" id="stuname">
+    <div class="max-w-7xl mx-auto px-6 py-20">
+     <div class="flex justify-center">
+      <div class="w-full md:w-5/12">
+        <div class="bg-white shadow-xl rounded-2xl p-10 border border-slate-100">
+          <h5 class="mb-8 text-2xl font-black text-primary text-center flex justify-center items-center gap-3"><i class="fas fa-user-plus"></i> Tạo tài khoản mới</h5>
+          <form role="form" id="stuRegForm" class="space-y-6">
+            <div>
+              <label for="stuname" class="block text-sm font-semibold text-slate-700 mb-2">
+                <i class="fas fa-user text-slate-400 mr-1"></i> Họ và tên
+              </label>
+              <input type="text" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" placeholder="Nhập họ tên" name="stuname" id="stuname">
+              <small id="statusMsg1" class="text-red-500 text-xs mt-1 block"></small>
             </div>
-            <div class="form-group">
-              <i class="fas fa-envelope"></i><label for="stuemail" class="pl-2 font-weight-bold">Email</label><small id="statusMsg2"></small>
-              <input type="email" class="form-control" placeholder="Nhập email" name="stuemail" id="stuemail">
-              <small class="form-text text-muted">Chúng tôi không chia sẻ email của bạn cho bên thứ ba.</small>
+            <div>
+              <label for="stuemail" class="block text-sm font-semibold text-slate-700 mb-2">
+                <i class="fas fa-envelope text-slate-400 mr-1"></i> Email
+              </label>
+              <input type="email" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" placeholder="Nhập email" name="stuemail" id="stuemail">
+              <small id="statusMsg2" class="text-red-500 text-xs mt-1 block"></small>
+              <small class="text-slate-400 text-xs mt-1 block">Chúng tôi không chia sẻ email của bạn cho bên thứ ba.</small>
             </div>
-            <div class="form-group">
-              <i class="fas fa-key"></i><label for="stupass" class="pl-2 font-weight-bold">Mật khẩu</label><small id="statusMsg3"></small>
-              <input type="password" class="form-control" placeholder="Tạo mật khẩu" name="stupass" id="stupass">
+            <div>
+              <label for="stupass" class="block text-sm font-semibold text-slate-700 mb-2">
+                <i class="fas fa-key text-slate-400 mr-1"></i> Mật khẩu
+              </label>
+              <input type="password" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" placeholder="Tạo mật khẩu" name="stupass" id="stupass">
+              <small id="statusMsg3" class="text-red-500 text-xs mt-1 block"></small>
             </div>
-            <button type="button" class="btn btn-primary btn-block py-2 font-weight-bold" id="signup" onclick="addStu()">Đăng ký</button>
-          </form><br/>
-          <small id="successMsg"></small>
-          <div class="text-center mt-3">
-              <span>Đã có tài khoản? </span><a href="login.php" class="text-primary font-weight-bold">Đăng nhập ngay</a>
+            <button type="button" class="w-full px-6 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex justify-center items-center gap-2" id="signup" onclick="addStu()">
+              Đăng ký <i class="fas fa-arrow-right"></i>
+            </button>
+          </form>
+          <div class="mt-4 text-center">
+            <small id="successMsg" class="font-semibold"></small>
+          </div>
+          <div class="text-center mt-6 pt-6 border-t border-slate-100">
+              <span class="text-slate-600 text-sm">Đã có tài khoản? </span>
+              <a href="login.php" class="text-primary font-bold hover:underline text-sm">Đăng nhập ngay</a>
           </div>
         </div>
       </div>
      </div>
     </div>
-    <hr/>
 
 <?php 
 // Contact Us

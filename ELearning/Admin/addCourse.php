@@ -14,8 +14,7 @@ include('../dbConnection.php');
  if(isset($_REQUEST['courseSubmitBtn'])){
   // Checking for Empty Fields
   if(($_REQUEST['course_name'] == "") || ($_REQUEST['course_desc'] == "") || ($_REQUEST['course_author'] == "") || ($_REQUEST['course_duration'] == "") || ($_REQUEST['course_price'] == "") || ($_REQUEST['course_original_price'] == "")){
-   // msg displayed if required field missing
-   $msg = '<div class="alert alert-warning col-sm-6 ml-5 mt-2" role="alert"> Vui lòng điền đầy đủ tất cả các trường dữ liệu! </div>';
+   // msg displayed if required field missi   $msg = ['type'=>'warning', 'text'=>'Vui lòng điền đầy đủ tất cả các trường dữ liệu!'];
   } else {
    // Assigning User Values to Variable
    $course_name = $_REQUEST['course_name'];
@@ -35,79 +34,185 @@ include('../dbConnection.php');
    $file_ext = strtolower(pathinfo($course_image, PATHINFO_EXTENSION));
 
    if ($image_error == UPLOAD_ERR_NO_FILE) {
-       $msg = '<div class="alert alert-warning col-sm-6 ml-5 mt-2" role="alert"> Vui lòng tải lên một ảnh đại diện khoá học! </div>';
+       $msg = ['type'=>'warning', 'text'=>'Vui lòng tải lên một ảnh đại diện khoá học!'];
    } else if (!in_array($file_ext, $allowed_types)) {
-       $msg = '<div class="alert alert-danger col-sm-6 ml-5 mt-2" role="alert"> Lỗi: Định dạng ảnh không hỗ trợ, chỉ chấp nhận jpg, jpeg, png, webp. </div>';
+       $msg = ['type'=>'error', 'text'=>'Định dạng ảnh không hỗ trợ. Chỉ chấp nhận jpg, jpeg, png, webp.'];
    } else if ($image_size > 2097152) { // 2MB
-       $msg = '<div class="alert alert-danger col-sm-6 ml-5 mt-2" role="alert"> Lỗi: Dung lượng ảnh lớn hơn mức cho phép (2MB). </div>';
+       $msg = ['type'=>'error', 'text'=>'Dung lượng ảnh lớn hơn mức cho phép (2MB).'];
    } else {
      $filename = time() . '_' . basename($course_image);
      $img_disk = __DIR__ . '/../image/courseimg/' . $filename;
      $img_db   = 'image/courseimg/' . $filename;
      move_uploaded_file($course_image_temp, $img_disk);
 
-     
      $sql = "INSERT INTO course (course_name, course_desc, course_author, course_img, course_duration, course_price, course_original_price) VALUES ('$course_name', '$course_desc','$course_author', '$img_db', '$course_duration', '$course_price', '$course_original_price')";
      if($conn->query($sql) == TRUE){
-      // below msg display on form submit success
-      $msg = '<div class="alert alert-success col-sm-6 ml-5 mt-2" role="alert"> Thêm khoá học thành công! </div>';
+      $msg = ['type'=>'success', 'text'=>'Thêm khoá học thành công!'];
      } else {
-      // below msg display on form submit failed
-      $msg = '<div class="alert alert-danger col-sm-6 ml-5 mt-2" role="alert"> Không thể thêm khoá học </div>';
+      $msg = ['type'=>'error', 'text'=>'Không thể thêm khoá học.'];
      }
    }
   }
 }
- ?>
-<div class="col-sm-6 mt-5  mx-3 jumbotron">
-  <h3 class="text-center">Thêm Khoá học mới</h3>
-  <form action="" method="POST" enctype="multipart/form-data">
-    <div class="form-group">
-      <label for="course_name">Tên khoá học</label>
-      <input type="text" class="form-control" id="course_name" name="course_name" required>
-    </div>
-    <div class="form-group">
-      <label for="course_desc">Mô tả khoá học</label>
-      <textarea class="form-control" id="course_desc" name="course_desc" row=2 required></textarea>
-    </div>
-    <div class="form-group">
-      <label for="course_author">Tác giả</label>
-      <input type="text" class="form-control" id="course_author" name="course_author" required>
-    </div>
-    <div class="form-group">
-      <label for="course_duration">Thời lượng khoá học</label>
-      <input type="text" class="form-control" id="course_duration" name="course_duration" required>
-    </div>
-    <div class="form-group">
-      <label for="course_original_price">Giá gốc (VNĐ)</label>
-      <input type="text" class="form-control" id="course_original_price" name="course_original_price" onkeypress="isInputNumber(event)" required>
-    </div>
-    <div class="form-group">
-      <label for="course_price">Giá bán thực tế (VNĐ)</label>
-      <input type="text" class="form-control" id="course_price" name="course_price" onkeypress="isInputNumber(event)" required>
-    </div>
-    <div class="form-group">
-      <label for="course_img">Ảnh đại diện (Tối đa 2MB)</label>
-      <input type="file" class="form-control-file" id="course_img" name="course_img" accept=".jpg, .jpeg, .png, .webp" required>
-    </div>
-    <div class="text-center">
-      <button type="submit" class="btn btn-primary" id="courseSubmitBtn" name="courseSubmitBtn">Gửi</button>
-      <a href="courses.php" class="btn btn-secondary">Đóng</a>
-    </div>
-    <?php if(isset($msg)) {echo $msg; } ?>
-  </form>
+?>
+
+<?php if(isset($msg)): 
+    $alertColors = ['success'=>'bg-green-50 border-green-200 text-green-700', 'error'=>'bg-red-50 border-red-200 text-red-600', 'warning'=>'bg-yellow-50 border-yellow-200 text-yellow-700'];
+    $alertIcons  = ['success'=>'fa-check-circle', 'error'=>'fa-exclamation-circle', 'warning'=>'fa-exclamation-triangle'];
+    $t = $msg['type'];
+?>
+<div class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl border <?php echo $alertColors[$t]; ?>">
+    <i class="fas <?php echo $alertIcons[$t]; ?>"></i>
+    <span class="text-sm font-medium"><?php echo htmlspecialchars($msg['text']); ?></span>
 </div>
-<!-- Only Number for input fields -->
+<?php endif; ?>
+
+<div class="max-w-3xl">
+    <!-- Page Header -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-black text-slate-800">Thêm khoá học mới</h2>
+            <p class="text-sm text-slate-500 mt-1">Điền đầy đủ thông tin để tạo một khoá học mới trên hệ thống.</p>
+        </div>
+        <a href="courses.php" class="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-200 transition-all no-underline">
+            <i class="fas fa-arrow-left text-xs"></i> Quay lại
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+        <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
+
+            <!-- Tên khoá học -->
+            <div>
+                <label for="course_name" class="block text-sm font-semibold text-slate-700 mb-2">
+                    Tên khoá học <span class="text-red-500">*</span>
+                </label>
+                <input type="text" id="course_name" name="course_name" required
+                       class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                       placeholder="VD: Thiết kế Đồ họa với Adobe Illustrator">
+            </div>
+
+            <!-- Mô tả -->
+            <div>
+                <label for="course_desc" class="block text-sm font-semibold text-slate-700 mb-2">
+                    Mô tả khoá học <span class="text-red-500">*</span>
+                </label>
+                <textarea id="course_desc" name="course_desc" rows="4" required
+                          class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all resize-none"
+                          placeholder="Mô tả ngắn gọn về nội dung và lợi ích của khoá học..."></textarea>
+            </div>
+
+            <!-- Tác giả & Thời lượng -->
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label for="course_author" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Tác giả / Giảng viên <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="course_author" name="course_author" required
+                           class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                           placeholder="VD: Lê Văn A">
+                </div>
+                <div>
+                    <label for="course_duration" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Thời lượng <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="course_duration" name="course_duration" required
+                           class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                           placeholder="VD: 3 Tháng, 20 giờ...">
+                </div>
+            </div>
+
+            <!-- Giá gốc & Giá bán -->
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label for="course_original_price" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Giá gốc (VNĐ) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">₫</span>
+                        <input type="text" id="course_original_price" name="course_original_price" required
+                               onkeypress="isInputNumber(event)"
+                               class="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                               placeholder="500000">
+                    </div>
+                </div>
+                <div>
+                    <label for="course_price" class="block text-sm font-semibold text-slate-700 mb-2">
+                        Giá bán thực tế (VNĐ) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-red-400 text-sm font-medium">₫</span>
+                        <input type="text" id="course_price" name="course_price" required
+                               onkeypress="isInputNumber(event)"
+                               class="w-full pl-8 pr-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                               placeholder="399000">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ảnh đại diện -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">
+                    Ảnh đại diện khoá học <span class="text-red-500">*</span>
+                    <span class="font-normal text-slate-400 ml-1">(JPG, PNG, WebP — tối đa 2MB)</span>
+                </label>
+                <div class="flex items-center gap-5">
+                    <div class="w-24 h-24 rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center shrink-0 overflow-hidden">
+                        <i class="fas fa-image text-slate-300 text-2xl" id="imgPlaceholderIcon"></i>
+                        <img id="courseImgPreview" class="w-full h-full object-cover hidden" alt="Preview">
+                    </div>
+                    <label for="course_img" class="flex-grow cursor-pointer flex items-center gap-3 px-5 py-4 border-2 border-dashed border-slate-300 rounded-xl hover:border-primary hover:bg-primary/5 transition-all">
+                        <i class="fas fa-cloud-upload-alt text-primary text-xl"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700">Nhấn để chọn ảnh</p>
+                            <p class="text-xs text-slate-400 mt-0.5" id="fileNameLabel">Chưa có file nào được chọn</p>
+                        </div>
+                        <input type="file" id="course_img" name="course_img" accept=".jpg,.jpeg,.png,.webp" required class="hidden"
+                               onchange="previewCourseImg(this)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-100">
+                <button type="submit" name="courseSubmitBtn"
+                        class="px-8 py-3 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+                    <i class="fas fa-plus-circle"></i> Thêm khoá học
+                </button>
+                <a href="courses.php" class="px-6 py-3 bg-slate-100 text-slate-600 font-semibold text-sm rounded-xl hover:bg-slate-200 transition-all no-underline">
+                    Huỷ bỏ
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-  function isInputNumber(evt) {
+function isInputNumber(evt) {
     var ch = String.fromCharCode(evt.which);
-    if (!(/[0-9]/.test(ch))) {
-      evt.preventDefault();
+    if (!(/[0-9]/.test(ch))) evt.preventDefault();
+}
+function previewCourseImg(input) {
+    const file = input.files[0];
+    if (file) {
+        document.getElementById('fileNameLabel').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('courseImgPreview');
+            const icon = document.getElementById('imgPlaceholderIcon');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            icon.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
     }
-  }
+}
 </script>
-</div>  <!-- div Row close from header -->
-</div>  <!-- div Conatiner-fluid close from header -->
+
+</main>
+</div>
+</div>
 
 <?php
 include('./adminInclude/footer.php'); 

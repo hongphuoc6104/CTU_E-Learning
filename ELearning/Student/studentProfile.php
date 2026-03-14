@@ -21,8 +21,8 @@ include_once('../dbConnection.php');
  $stuName = $row["stu_name"]; 
  $stuOcc = $row["stu_occ"];
  $stuImg = $row["stu_img"];
- // Chuẩn hoá path: xoá prefix ../ để dùng được từ web root
- if(!empty($stuImg)) $stuImg = ltrim(str_replace('../', '', $stuImg), '/');
+ // Chuẩn hoá path: thêm ../ để dùng được từ thư mục Student
+ if(!empty($stuImg)) $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
 }
 
  if(isset($_REQUEST['updateStuNameBtn'])){
@@ -52,6 +52,7 @@ include_once('../dbConnection.php');
          $stuName = $row_refresh["stu_name"]; 
          $stuOcc = $row_refresh["stu_occ"];
          $stuImg = $row_refresh["stu_img"];
+         if(!empty($stuImg)) $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
        }
        $passmsg = 'success:Cập nhật thông tin thành công!';
    } else {
@@ -61,11 +62,11 @@ include_once('../dbConnection.php');
  }
 
 // Fetch owned courses
-$my_courses_sql = "SELECT c.*, co.order_date FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail' ORDER BY co.order_date DESC";
+$my_courses_sql = "SELECT c.*, co.order_date FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail' AND co.is_deleted=0 AND c.is_deleted=0 ORDER BY co.order_date DESC";
 $my_courses_result = $conn->query($my_courses_sql);
 
 // Fetch my feedback (bảng feedback không có course_id, bỏ JOIN)
-$my_feedback_sql = "SELECT * FROM feedback WHERE stu_id = '$stuId' ORDER BY f_id DESC";
+$my_feedback_sql = "SELECT * FROM feedback WHERE stu_id = '$stuId' AND is_deleted=0 ORDER BY f_id DESC";
 $my_feedback_result = $conn->query($my_feedback_sql);
 ?>
 
@@ -78,8 +79,8 @@ $my_feedback_result = $conn->query($my_feedback_sql);
         <div class="px-8 pb-8 flex flex-col sm:flex-row gap-6 items-start sm:items-end -mt-14">
             <!-- Avatar -->
             <div class="relative shrink-0">
-                <img src="<?php echo !empty($stuImg) ? $stuImg : 'image/stu/student1.jpg'; ?>" 
-                     onerror="this.onerror=null;this.src='image/stu/student1.jpg'"
+                <img src="<?php echo !empty($stuImg) ? $stuImg : '../image/stu/default_avatar.png'; ?>" 
+                     onerror="this.onerror=null;this.src='../image/stu/default_avatar.png'"
                      class="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg" 
                      alt="Avatar" id="avatarPreview">
             </div>
@@ -171,8 +172,8 @@ $my_feedback_result = $conn->query($my_feedback_sql);
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-3">Ảnh đại diện</label>
                     <div class="flex items-center gap-4">
-                        <img src="<?php echo !empty($stuImg) ? $stuImg : 'image/stu/student1.jpg'; ?>" 
-                             onerror="this.onerror=null;this.src='image/stu/student1.jpg'"
+                        <img src="<?php echo !empty($stuImg) ? $stuImg : '../image/stu/default_avatar.png'; ?>" 
+                             onerror="this.onerror=null;this.src='../image/stu/default_avatar.png'"
                              class="w-16 h-16 rounded-full object-cover border-2 border-slate-200 shadow-sm" id="smallAvatarPreview">
                         <div class="flex-grow">
                             <label for="stuImg" 
@@ -200,11 +201,11 @@ $my_feedback_result = $conn->query($my_feedback_sql);
             <?php if($my_courses_result && $my_courses_result->num_rows > 0): ?>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php while($c = $my_courses_result->fetch_assoc()): 
-                    $c_img = str_replace('..', '.', $c['course_img']);
+                    $c_img = '../' . ltrim(str_replace('../', '', $c['course_img']), '/');
                 ?>
                 <div class="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:shadow-md transition-all group">
                     <a href="../coursedetails.php?course_id=<?php echo $c['course_id']; ?>" class="block aspect-video overflow-hidden">
-                        <img src="<?php echo $c_img; ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Course image">
+                        <img src="<?php echo $c_img; ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Course image" onerror="this.onerror=null;this.src='../image/courseimg/course5.jpg'">
                     </a>
                     <div class="p-4">
                         <h3 class="font-bold text-slate-900 text-sm line-clamp-2 mb-2"><?php echo htmlspecialchars($c['course_name']); ?></h3>
@@ -274,14 +275,15 @@ $my_feedback_result = $conn->query($my_feedback_sql);
                 $resCheck = $conn->query($sqlCheck);
                 $rowCheck = $resCheck->fetch_assoc();
                 
-                if($rowCheck['stu_pass'] !== $oldPass){
+                if(!password_verify($oldPass, $rowCheck['stu_pass']) && $rowCheck['stu_pass'] !== $oldPass){
                     $passMsgChange = 'error:Mật khẩu cũ không đúng.';
                 } elseif($newPass !== $confirmPass){
                     $passMsgChange = 'error:Mật khẩu mới không khớp nhau.';
                 } elseif(strlen($newPass) < 6){
                     $passMsgChange = 'error:Mật khẩu mới phải có ít nhất 6 ký tự.';
                 } else {
-                    $sqlUp = "UPDATE student SET stu_pass='$newPass' WHERE stu_email='$stuEmail'";
+                    $hashedNewPass = password_hash($newPass, PASSWORD_DEFAULT);
+                    $sqlUp = "UPDATE student SET stu_pass='$hashedNewPass' WHERE stu_email='$stuEmail'";
                     if($conn->query($sqlUp)){
                         $passMsgChange = 'success:Đổi mật khẩu thành công!';
                     } else {

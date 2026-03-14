@@ -1,5 +1,5 @@
 <!-- Pre-footer/Footer -->
-<footer class="bg-slate-900 text-slate-300 pt-20 mt-auto">
+<footer id="Contact" class="bg-slate-900 text-slate-300 pt-20 mt-auto">
 <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-16 pb-16">
 <div>
 <div class="flex items-center gap-3 mb-6 text-white">

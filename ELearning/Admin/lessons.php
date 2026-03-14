@@ -12,7 +12,7 @@ if(!isset($_SESSION['is_admin_login'])){
 // Delete lesson
 if(isset($_POST['delete_lesson'])){
     $lid = (int)$_POST['lid'];
-    $conn->query("DELETE FROM lesson WHERE lesson_id=$lid");
+    $conn->query("UPDATE lesson SET is_deleted=1 WHERE lesson_id=$lid");
     echo "<script>location.href='lessons.php';</script>"; exit;
 }
 
@@ -20,14 +20,14 @@ if(isset($_POST['delete_lesson'])){
 $filter_course = (int)($_GET['course_id'] ?? 0);
 $search = trim($_GET['q'] ?? '');
 
-$sql = "SELECT l.*, c.course_name FROM lesson l LEFT JOIN course c ON l.course_id=c.course_id WHERE 1";
+$sql = "SELECT l.*, c.course_name FROM lesson l LEFT JOIN course c ON l.course_id=c.course_id WHERE l.is_deleted=0";
 if($filter_course) $sql .= " AND l.course_id=$filter_course";
 if($search) $sql .= " AND (l.lesson_name LIKE '%".addslashes($search)."%')";
 $sql .= " ORDER BY l.course_id, l.lesson_id";
 $result = $conn->query($sql);
 
-// All courses for dropdown
-$courses_all = $conn->query("SELECT course_id, course_name FROM course ORDER BY course_name");
+// All courses for dropdown (non-deleted)
+$courses_all = $conn->query("SELECT course_id, course_name FROM course WHERE is_deleted=0 ORDER BY course_name");
 ?>
 
 <!-- Toolbar -->

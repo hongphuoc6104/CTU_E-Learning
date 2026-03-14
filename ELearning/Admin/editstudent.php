@@ -14,7 +14,7 @@ include('../dbConnection.php');
  // Update
  if(isset($_REQUEST['requpdate'])){
   // Checking for Empty Fields
-  if(($_REQUEST['stu_id'] == "") || ($_REQUEST['stu_name'] == "") || ($_REQUEST['stu_email'] == "") || ($_REQUEST['stu_pass'] == "") || ($_REQUEST['stu_occ'] == "")){
+  if(($_REQUEST['stu_id'] == "") || ($_REQUEST['stu_name'] == "") || ($_REQUEST['stu_email'] == "") || ($_REQUEST['stu_occ'] == "")){
    // msg displayed if required field missing
    $msg = '<div class="alert alert-warning col-sm-6 ml-5 mt-2" role="alert"> Vui lòng điền đầy đủ thông tin! </div>';
   } else {
@@ -25,7 +25,12 @@ include('../dbConnection.php');
     $spass = $_REQUEST['stu_pass'];
     $socc = $_REQUEST['stu_occ'];
     
-   $sql = "UPDATE student SET stu_id = '$sid', stu_name = '$sname', stu_email = '$semail', stu_pass='$spass', stu_occ='$socc' WHERE stu_id = '$sid'";
+    if(!empty($spass)) {
+        $hashedPass = password_hash($spass, PASSWORD_DEFAULT);
+        $sql = "UPDATE student SET stu_name = '$sname', stu_email = '$semail', stu_pass='$hashedPass', stu_occ='$socc' WHERE stu_id = '$sid'";
+    } else {
+        $sql = "UPDATE student SET stu_name = '$sname', stu_email = '$semail', stu_occ='$socc' WHERE stu_id = '$sid'";
+    }
     if($conn->query($sql) == TRUE){
      // below msg display on form submit success
      $msg = '<div class="alert alert-success col-sm-6 ml-5 mt-2" role="alert"> Cập nhật thành công! </div>';
@@ -61,8 +66,8 @@ include('../dbConnection.php');
     </div>
 
     <div class="form-group">
-      <label for="stu_pass">Mật khẩu</label>
-      <input type="text" class="form-control" id="stu_pass" name="stu_pass" value="<?php if(isset($row['stu_pass'])) {echo $row['stu_pass']; }?>" required>
+      <label for="stu_pass">Mật khẩu mới (Để trống nếu không muốn đổi)</label>
+      <input type="text" class="form-control" id="stu_pass" name="stu_pass" value="">
     </div>
     <div class="form-group">
       <label for="stu_occ">Nghề nghiệp</label>

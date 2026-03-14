@@ -24,12 +24,18 @@ if(isset($_POST['adminPassUpdatebtn'])){
     } elseif(strlen($newPass) < 6){
         $msg = ['type'=>'error','text'=>'Mật khẩu mới phải có ít nhất 6 ký tự.'];
     } else {
-        $r = $conn->query("SELECT admin_id FROM admin WHERE admin_email='$adminEmail' AND admin_pass='$oldPass'");
+        $r = $conn->query("SELECT admin_pass FROM admin WHERE admin_email='$adminEmail'");
         if($r->num_rows === 0){
-            $msg = ['type'=>'error','text'=>'Mật khẩu cũ không đúng.'];
+            $msg = ['type'=>'error','text'=>'Không tìm thấy tài khoản.'];
         } else {
-            $conn->query("UPDATE admin SET admin_pass='$newPass' WHERE admin_email='$adminEmail'");
-            $msg = ['type'=>'success','text'=>'Đổi mật khẩu thành công!'];
+            $row = $r->fetch_assoc();
+            if(!password_verify($oldPass, $row['admin_pass']) && $row['admin_pass'] !== $oldPass) {
+                $msg = ['type'=>'error','text'=>'Mật khẩu cũ không đúng.'];
+            } else {
+                $hashedNewPass = password_hash($newPass, PASSWORD_DEFAULT);
+                $conn->query("UPDATE admin SET admin_pass='$hashedNewPass' WHERE admin_email='$adminEmail'");
+                $msg = ['type'=>'success','text'=>'Đổi mật khẩu thành công!'];
+            }
         }
     }
 }

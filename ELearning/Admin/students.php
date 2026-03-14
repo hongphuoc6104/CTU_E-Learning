@@ -12,15 +12,15 @@ if(!isset($_SESSION['is_admin_login'])){
 // Delete student
 if(isset($_POST['delete_stu'])){
     $sid = (int)$_POST['sid'];
-    $conn->query("DELETE FROM cart WHERE stu_email=(SELECT stu_email FROM student WHERE stu_id=$sid)");
-    $conn->query("DELETE FROM student WHERE stu_id=$sid");
+    $conn->query("UPDATE cart SET is_deleted=1 WHERE stu_email=(SELECT stu_email FROM student WHERE stu_id=$sid)");
+    $conn->query("UPDATE student SET is_deleted=1 WHERE stu_id=$sid");
     echo "<script>location.href='students.php';</script>"; exit;
 }
 
 $search = trim($_GET['q'] ?? '');
-$sql = "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email=s.stu_email) AS course_count
-        FROM student s";
-if($search) $sql .= " WHERE s.stu_name LIKE '%".addslashes($search)."%' OR s.stu_email LIKE '%".addslashes($search)."%'";
+$sql = "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email=s.stu_email AND o.is_deleted=0) AS course_count
+        FROM student s WHERE s.is_deleted = 0";
+if($search) $sql .= " AND (s.stu_name LIKE '%".addslashes($search)."%' OR s.stu_email LIKE '%".addslashes($search)."%')";
 $sql .= " ORDER BY s.stu_id DESC";
 $result = $conn->query($sql);
 ?>

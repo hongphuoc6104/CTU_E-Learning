@@ -1,3 +1,21 @@
+<?php
+if(isset($_POST['submitContact'])) {
+    if(!isset($conn)) { include_once('dbConnection.php'); }
+    $c_name = $conn->real_escape_string($_POST['name'] ?? '');
+    $c_subject = $conn->real_escape_string($_POST['subject'] ?? '');
+    $c_email = $conn->real_escape_string($_POST['email'] ?? '');
+    $c_message = $conn->real_escape_string($_POST['message'] ?? '');
+    
+    if(!empty($c_name) && !empty($c_email) && !empty($c_message)) {
+        $sql_c = "INSERT INTO contact_message (name, subject, email, message) VALUES ('$c_name', '$c_subject', '$c_email', '$c_message')";
+        if($conn->query($sql_c)) {
+            echo "<script>alert('Gửi tin nhắn liên hệ thành công. Chúng tôi sẽ phản hồi sớm nhất!');</script>";
+        } else {
+            echo "<script>alert('Lỗi hệ thống khi gửi liên hệ!');</script>";
+        }
+    }
+}
+?>
 <!--Start Contact Us-->
 <div class="container mt-5 mb-5" id="Contact">
   <h2 class="text-center font-weight-bold text-primary mb-5" style="letter-spacing: 1px;">Liên hệ với chúng tôi</h2>
@@ -17,7 +35,7 @@
         <div class="form-group">
             <textarea class="form-control" name="message" placeholder="Bạn cần hỗ trợ gì?" style="height:120px;" required></textarea>
         </div>
-        <button class="btn btn-primary px-5 py-2 font-weight-bold" type="submit" name="submit">Gửi tin nhắn <i class="fas fa-paper-plane ml-2"></i></button>
+        <button class="btn btn-primary px-5 py-2 font-weight-bold" type="submit" name="submitContact">Gửi tin nhắn <i class="fas fa-paper-plane ml-2"></i></button>
       </form>
     </div>
 

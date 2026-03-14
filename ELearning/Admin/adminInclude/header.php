@@ -9,9 +9,11 @@ if(!isset($_SESSION['is_admin_login'])){
 $adminEmail = $_SESSION['adminLogEmail'] ?? '';
 $adminName  = explode('@', $adminEmail)[0] ?? 'Admin';
 
-// Cart count not needed for admin, just page title + current PAGE constant
 $pageTitle = defined('TITLE') ? TITLE : 'Admin';
 $currentPage = defined('PAGE') ? PAGE : '';
+
+// Include DB connection so $conn is available for sidebar badge
+if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -30,6 +32,7 @@ $currentPage = defined('PAGE') ? PAGE : '';
             primary:  '#003366',
             sidebar:  '#001f40',
             accent:   '#10b981',
+            accentbg: '#064e3b',
           },
           fontFamily: { sans: ['Inter', 'sans-serif'] }
         }
@@ -37,88 +40,161 @@ $currentPage = defined('PAGE') ? PAGE : '';
     }
   </script>
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Font Awesome SVG (no webfonts needed) -->
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
   <script defer src="../js/all.min.js"></script>
 
   <style>
-    body { font-family: 'Inter', sans-serif; background:#f5f7f8; }
-    .sidebar-link { display:flex; align-items:center; gap:10px; padding:11px 20px; border-radius:10px; font-size:.875rem; font-weight:500; color:#94a3b8; transition:all .18s; }
-    .sidebar-link:hover { background:rgba(255,255,255,.08); color:#fff; text-decoration:none; }
-    .sidebar-link.active { background:rgba(16,185,129,.15); color:#10b981; }
-    .sidebar-link i { width:18px; text-align:center; font-size:.9rem; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f5f7f8; min-height: 100vh; }
+
+    /* Sidebar link */
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 10px;
+      font-size: .82rem; font-weight: 600; letter-spacing:.01em;
+      color: rgba(255,255,255,.50); transition: all .18s ease;
+      text-decoration: none; position: relative; overflow: hidden;
+    }
+    .nav-link:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .nav-link.active { color: #10b981; background: rgba(16,185,129,.15); }
+    .nav-link.active::before {
+      content:''; position:absolute; left:0; top:20%; bottom:20%;
+      width:3px; border-radius:0 4px 4px 0; background:#10b981;
+    }
+    .nav-link i { width: 16px; text-align: center; font-size: .82rem; flex-shrink:0; }
+    .nav-section { font-size:.65rem; font-weight:700; letter-spacing:.1em;
+      text-transform:uppercase; color:rgba(255,255,255,.25); padding: 12px 14px 4px; }
+
+    /* Card glow */
+    .stat-card { position:relative; overflow:hidden; }
+    .stat-card::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.04),transparent); pointer-events:none; }
+
+    @media print {
+      aside, header { display: none !important; }
+      .ml-64 { margin-left: 0 !important; }
+      main { padding: 0 !important; }
+    }
   </style>
 </head>
 <body>
 
-<!-- ===== LAYOUT WRAPPER ===== -->
+<!-- LAYOUT -->
 <div class="flex min-h-screen">
 
   <!-- ===== SIDEBAR ===== -->
-  <aside class="w-60 bg-sidebar fixed top-0 left-0 h-screen flex flex-col z-40 shrink-0">
-    <!-- Logo -->
-    <a href="adminDashboard.php" class="flex items-center gap-3 px-6 py-5 border-b border-white/10 hover:opacity-90 transition-opacity no-underline">
-      <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center">
+  <aside class="w-64 bg-sidebar fixed top-0 left-0 h-screen flex flex-col z-40 shrink-0 print:hidden"
+         style="background: linear-gradient(180deg,#001f40 0%,#002a55 100%); border-right:1px solid rgba(16,185,129,.12);">
+
+    <!-- Brand -->
+    <a href="adminDashboard.php" class="flex items-center gap-3 px-5 py-5 no-underline group"
+       style="border-bottom:1px solid rgba(16,185,129,.12);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+           style="background:linear-gradient(135deg,#003366,#005299);">
         <i class="fas fa-graduation-cap text-white text-sm"></i>
       </div>
       <div>
-        <p class="text-white font-bold text-sm leading-none">CTU Admin</p>
-        <p class="text-white/40 text-xs mt-0.5">Quản trị hệ thống</p>
+        <p class="text-white font-extrabold text-sm leading-none tracking-tight">CTU E-Learning</p>
+        <p class="text-xs mt-0.5" style="color:rgba(16,185,129,.7);">Admin Dashboard</p>
       </div>
     </a>
 
     <!-- Nav -->
-    <nav class="flex-grow px-3 py-4 space-y-0.5 overflow-y-auto">
-      <a href="adminDashboard.php" class="sidebar-link <?php echo ($currentPage=='dashboard')?'active':''; ?>">
-        <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
+    <nav class="flex-grow px-3 py-3 overflow-y-auto space-y-0.5">
+      <p class="nav-section">Tổng quan</p>
+      <a href="adminDashboard.php" class="nav-link <?php echo ($currentPage=='dashboard')?'active':''; ?>">
+        <i class="fas fa-chart-pie"></i> Bảng điều khiển
       </a>
-      <a href="courses.php" class="sidebar-link <?php echo ($currentPage=='courses')?'active':''; ?>">
-        <i class="fas fa-book"></i> Khoá học
+
+      <p class="nav-section">Quản lý nội dung</p>
+      <a href="courses.php" class="nav-link <?php echo ($currentPage=='courses')?'active':''; ?>">
+        <i class="fas fa-layer-group"></i> Khoá học
       </a>
-      <a href="lessons.php" class="sidebar-link <?php echo ($currentPage=='lessons')?'active':''; ?>">
+      <a href="lessons.php" class="nav-link <?php echo ($currentPage=='lessons')?'active':''; ?>">
         <i class="fas fa-play-circle"></i> Bài học
       </a>
-      <a href="students.php" class="sidebar-link <?php echo ($currentPage=='students')?'active':''; ?>">
+
+      <p class="nav-section">Người dùng & Phân tích</p>
+      <a href="students.php" class="nav-link <?php echo ($currentPage=='students')?'active':''; ?>">
         <i class="fas fa-users"></i> Học viên
       </a>
-      <a href="sellReport.php" class="sidebar-link <?php echo ($currentPage=='sellreport')?'active':''; ?>">
-        <i class="fas fa-chart-bar"></i> Doanh thu
+      <a href="sellReport.php" class="nav-link <?php echo ($currentPage=='sellreport')?'active':''; ?>">
+        <i class="fas fa-chart-line"></i> Doanh thu
       </a>
-      <a href="feedback.php" class="sidebar-link <?php echo ($currentPage=='feedback')?'active':''; ?>">
-        <i class="fas fa-star"></i> Đánh giá
+      <a href="feedback.php" class="nav-link <?php echo ($currentPage=='feedback')?'active':''; ?>">
+        <i class="fas fa-comment-dots"></i> Đánh giá
       </a>
-      <div class="border-t border-white/10 mt-3 pt-3"></div>
-      <a href="adminChangePass.php" class="sidebar-link <?php echo ($currentPage=='changepass')?'active':''; ?>">
-        <i class="fas fa-key"></i> Đổi mật khẩu
+      <a href="contacts.php" class="nav-link <?php echo ($currentPage=='contacts')?'active':''; ?>">
+        <i class="fas fa-envelope-open-text"></i> Hộp thư liên hệ
       </a>
-      <a href="../logout.php" class="sidebar-link hover:!text-red-400">
+      <?php
+        // Trash count badge - only if $conn available
+        $trashCount = 0;
+        if(isset($conn)) {
+            foreach(['course','lesson','student','feedback','courseorder','contact_message'] as $tbl) {
+                $r = $conn->query("SELECT COUNT(*) as c FROM `$tbl` WHERE is_deleted=1");
+                if($r) $trashCount += $r->fetch_assoc()['c'];
+            }
+        }
+      ?>
+      <a href="trash.php" class="nav-link <?php echo ($currentPage=='trash')?'active':''; ?>" style="color:rgba(239,68,68,.6);"
+         onmouseover="this.style.color='#f87171';this.style.background='rgba(239,68,68,.07)'"
+         onmouseout="this.style.color='rgba(239,68,68,.6)';this.style.background='transparent'"
+         >
+        <i class="fas fa-trash-alt"></i>
+        <span>Thùng rác</span>
+        <?php if($trashCount > 0): ?>
+        <span class="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400"><?php echo $trashCount; ?></span>
+        <?php endif; ?>
+      </a>
+
+      <div style="border-top:1px solid rgba(255,255,255,.06); margin: 10px 0;"></div>
+
+      <p class="nav-section">Tài khoản</p>
+      <a href="adminChangePass.php" class="nav-link <?php echo ($currentPage=='changepass')?'active':''; ?>">
+        <i class="fas fa-lock"></i> Đổi mật khẩu
+      </a>
+      <a href="../logout.php" class="nav-link" style="color:rgba(239,68,68,.6);"
+         onmouseover="this.style.color='#f87171';this.style.background='rgba(239,68,68,.1)'"
+         onmouseout="this.style.color='rgba(239,68,68,.6)';this.style.background='transparent'">
         <i class="fas fa-sign-out-alt"></i> Đăng xuất
       </a>
     </nav>
 
-    <!-- Admin info -->
-    <div class="px-4 py-4 border-t border-white/10">
+    <!-- Admin profile -->
+    <div style="border-top:1px solid rgba(16,185,129,.12);" class="px-4 py-4">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-          <i class="fas fa-user-shield text-accent text-xs"></i>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+             style="background:rgba(16,185,129,.15);">
+          <i class="fas fa-user-shield text-xs" style="color:#10b981;"></i>
         </div>
         <div class="min-w-0">
-          <p class="text-white text-xs font-semibold truncate"><?php echo htmlspecialchars($adminName); ?></p>
-          <p class="text-white/40 text-xs truncate"><?php echo htmlspecialchars($adminEmail); ?></p>
+          <p class="text-white text-xs font-bold truncate"><?php echo htmlspecialchars(ucfirst($adminName)); ?></p>
+          <p class="text-xs truncate" style="color:rgba(16,185,129,.5);"><?php echo htmlspecialchars($adminEmail); ?></p>
         </div>
+        <div class="ml-auto w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Online"></div>
       </div>
     </div>
   </aside>
 
   <!-- ===== MAIN CONTENT AREA ===== -->
-  <div class="ml-60 flex-grow flex flex-col min-h-screen">
+  <div class="ml-64 flex-grow flex flex-col min-h-screen print:ml-0">
+
     <!-- Top bar -->
-    <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
-      <h1 class="text-lg font-bold text-slate-800"><?php echo $pageTitle; ?></h1>
-      <div class="flex items-center gap-3 text-sm text-slate-500">
-        <i class="fas fa-clock text-xs"></i>
-        <?php echo date('d/m/Y'); ?>
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 print:hidden"
+            style="border-bottom:1px solid rgba(79,70,229,.08);">
+      <div class="px-8 py-3.5 flex items-center justify-between">
+        <div>
+          <h1 class="text-base font-bold text-slate-800 leading-none"><?php echo $pageTitle; ?></h1>
+          <p class="text-xs text-slate-400 mt-0.5"><?php echo date('l, d/m/Y'); ?></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="../index.php" target="_blank"
+             class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-primary hover:bg-primary/5 transition-colors">
+            <i class="fas fa-external-link-alt text-xs"></i> Xem trang học viên
+          </a>
+        </div>
       </div>
     </header>
 

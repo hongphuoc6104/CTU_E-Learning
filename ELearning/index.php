@@ -98,23 +98,43 @@
 
 <div class="grid md:grid-cols-3 gap-8 mb-8">
 <?php
-$sql = "SELECT * FROM course LIMIT 6";
+$sql = "SELECT * FROM course WHERE is_deleted=0 LIMIT 6";
 $result = $conn->query($sql);
 if($result->num_rows > 0){ 
   while($row = $result->fetch_assoc()){
     $course_id = $row['course_id'];
-    $img_path = str_replace('..', '.', $row['course_img']);
+    $img_path = ltrim(str_replace('../', '', $row['course_img']), '/');
     $price = number_format($row['course_price']);
     $original_price = number_format($row['course_original_price']);
+
+    // Check if already purchased
+    $isPurchased = false;
+    if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
+        $stuEmail = $_SESSION['stuLogEmail'];
+        $checkSql = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
+        $checkRes = $conn->query($checkSql);
+        if($checkRes && $checkRes->num_rows > 0){
+            $isPurchased = true;
+        }
+    }
+
     echo '
-        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col h-full">
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-slate-100 group flex flex-col h-full relative">
             <a href="coursedetails.php?course_id='.$course_id.'" class="aspect-video relative overflow-hidden block">
                 <img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src="'.$img_path.'"/>
                 <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </a>
-            <button onclick="addToCart('.$course_id.'); return false;" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full text-primary hover:bg-primary hover:text-white shadow-sm transition-colors cursor-pointer border-0 z-10">
-                <i class="fas fa-shopping-cart text-lg block"></i>
-            </button>
+            ';
+            if(!$isPurchased){
+                echo '<button onclick="addToCart('.$course_id.'); return false;" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full text-primary hover:bg-primary hover:text-white shadow-sm transition-colors cursor-pointer border-0 z-10">
+                    <i class="fas fa-shopping-cart text-lg block"></i>
+                </button>';
+            } else {
+                echo '<div class="absolute top-4 right-4 px-3 py-1 bg-green-500/90 backdrop-blur rounded-full text-white text-[11px] font-bold shadow-sm z-10 flex items-center gap-1">
+                    <i class="fas fa-check-circle"></i> Đã sở hữu
+                </div>';
+            }
+            echo '
             <div class="p-6 flex flex-col flex-grow">
                 <h3 class="text-lg font-bold text-slate-900 mb-2 line-clamp-2">'.$row['course_name'].'</h3>
                 <p class="text-sm text-slate-600 mb-6 line-clamp-2 leading-relaxed flex-grow">'.$row['course_desc'].'</p>
@@ -123,9 +143,17 @@ if($result->num_rows > 0){
                         <p class="text-xs text-slate-400 line-through m-0">'.$original_price.' đ</p>
                         <p class="text-xl font-black text-red-600 m-0 leading-none mt-1">'.$price.' đ</p>
                     </div>
-                    <a href="coursedetails.php?course_id='.$course_id.'" class="px-5 py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-primary hover:text-white transition-all no-underline shrink-0">
-                        Chi tiết
-                    </a>
+                    ';
+                    if($isPurchased){
+                        echo '<a href="Student/watchcourse.php?course_id='.$course_id.'" class="px-5 py-2.5 bg-green-50 text-green-600 text-sm font-bold rounded-lg hover:bg-green-500 hover:text-white transition-all no-underline shrink-0 flex items-center gap-1.5">
+                            <i class="fas fa-play"></i> Học ngay
+                        </a>';
+                    } else {
+                        echo '<a href="coursedetails.php?course_id='.$course_id.'" class="px-5 py-2.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg hover:bg-primary hover:text-white transition-all no-underline shrink-0">
+                            Chi tiết
+                        </a>';
+                    }
+                    echo '
                 </div>
             </div>
         </div>
@@ -149,7 +177,7 @@ if($result->num_rows > 0){
 </div>
 <div class="grid md:grid-cols-3 gap-8 gap-y-16 relative">
 <?php 
-  $sql = "SELECT s.stu_name, s.stu_occ, s.stu_img, f.f_content FROM student AS s JOIN feedback AS f ON s.stu_id = f.stu_id LIMIT 6";
+  $sql = "SELECT s.stu_name, s.stu_occ, s.stu_img, f.f_content FROM student AS s JOIN feedback AS f ON s.stu_id = f.stu_id WHERE f.is_deleted=0 AND s.is_deleted=0 LIMIT 6";
   $result = $conn->query($sql);
   if($result->num_rows > 0) {
     while($row = $result->fetch_assoc()){

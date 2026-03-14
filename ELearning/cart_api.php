@@ -16,15 +16,15 @@ if ($action == 'add') {
     $course_id = $_POST['course_id'];
     
     // Check if already bought
-    $check_bought = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND status = 'TXN_SUCCESS'";
+    $check_bought = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
     $res_bought = $conn->query($check_bought);
     if ($res_bought->num_rows > 0) {
-        echo json_encode(['status' => 'info', 'msg' => 'Bạn đã mua khoá học này rồi!']);
+        echo json_encode(['status' => 'info', 'msg' => 'Bạn đã có khoá học này rồi, không thể thêm!']);
         exit;
     }
 
-    // Check if already in cart
-    $check_cart = "SELECT * FROM cart WHERE stu_email = '$stuEmail' AND course_id = '$course_id'";
+    // Check if already in cart (only active, non-deleted entries)
+    $check_cart = "SELECT * FROM cart WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
     $res_cart = $conn->query($check_cart);
     if ($res_cart->num_rows > 0) {
         echo json_encode(['status' => 'info', 'msg' => 'Khoá học đã có trong giỏ hàng!']);
@@ -41,7 +41,7 @@ if ($action == 'add') {
 } 
 elseif ($action == 'remove') {
     $cart_id = $_POST['cart_id'];
-    $sql = "DELETE FROM cart WHERE cart_id = '$cart_id' AND stu_email = '$stuEmail'";
+    $sql = "UPDATE cart SET is_deleted=1 WHERE cart_id = '$cart_id' AND stu_email = '$stuEmail'";
     if ($conn->query($sql) === TRUE) {
         echo json_encode(['status' => 'success', 'msg' => 'Đã xoá khỏi giỏ!']);
     } else {
@@ -49,7 +49,7 @@ elseif ($action == 'remove') {
     }
 } 
 elseif ($action == 'count') {
-    $sql = "SELECT COUNT(*) as count FROM cart WHERE stu_email = '$stuEmail'";
+    $sql = "SELECT COUNT(*) as count FROM cart WHERE stu_email = '$stuEmail' AND is_deleted=0";
     $result = $conn->query($sql);
     $row = $result->fetch_assoc();
     echo json_encode(['status' => 'success', 'count' => $row['count']]);

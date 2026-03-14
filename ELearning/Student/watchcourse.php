@@ -9,11 +9,11 @@ include('../dbConnection.php');
 if(!isset($_GET['course_id'])) { echo "<script>location.href='myCourse.php';</script>"; exit; }
 $course_id = (int)$_GET['course_id'];
 
-$own = $conn->query("SELECT 1 FROM courseorder WHERE stu_email='$stuEmail' AND course_id=$course_id LIMIT 1");
+$own = $conn->query("SELECT 1 FROM courseorder WHERE stu_email='$stuEmail' AND course_id=$course_id AND is_deleted=0 LIMIT 1");
 if($own->num_rows === 0) { echo "<script>location.href='myCourse.php';</script>"; exit; }
 
 // Get course info
-$course = $conn->query("SELECT * FROM course WHERE course_id=$course_id")->fetch_assoc();
+$course = $conn->query("SELECT * FROM course WHERE course_id=$course_id AND is_deleted=0")->fetch_assoc();
 if(!$course) { echo "<script>location.href='myCourse.php';</script>"; exit; }
 
 // Get lessons
@@ -22,7 +22,37 @@ $lessons = $conn->query("SELECT * FROM lesson WHERE course_id=$course_id ORDER B
 // Student info
 $stu = $conn->query("SELECT stu_name, stu_img FROM student WHERE stu_email='$stuEmail'")->fetch_assoc();
 $stuImg = ltrim(str_replace('../', '', $stu['stu_img'] ?? ''), '/');
+
+// Helper: convert any YouTube URL → embed URL
+function getYTEmbedUrl($url) {
+    $id = '';
+    if (str_contains($url, 'youtube.com/embed/')) { $p = explode('youtube.com/embed/', $url); $id = explode('?', $p[1])[0]; }
+    elseif (preg_match('/youtu\.be\/([a-zA-Z0-9_\-]+)/', $url, $m)) $id = $m[1];
+    elseif (preg_match('/[?&]v=([a-zA-Z0-9_\-]+)/', $url, $m)) $id = $m[1];
+    elseif (preg_match('/youtube\.com\/shorts\/([a-zA-Z0-9_\-]+)/', $url, $m)) $id = $m[1];
+    
+    if ($id) return 'https://www.youtube.com/embed/'.$id.'?enablejsapi=1&rel=0';
+    return null;
+}
+function isYouTube($url) {
+    return str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be');
+}
+
+$firstLink  = '';
+$firstName  = '';
+$firstIsYT  = false;
+$firstEmbed = '';
+if ($lessons->num_rows > 0) {
+    $lessons->data_seek(0);
+    $tmp = $lessons->fetch_assoc();
+    $lessons->data_seek(0);
+    $firstLink  = $tmp['lesson_link'] ?? '';
+    $firstName  = $tmp['lesson_name'] ?? '';
+    $firstIsYT  = isYouTube($firstLink);
+    $firstEmbed = $firstIsYT ? getYTEmbedUrl($firstLink) : '';
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -76,19 +106,24 @@ $stuImg = ltrim(str_replace('../', '', $stu['stu_img'] ?? ''), '/');
     </div>
     <ul class="flex-grow overflow-y-auto py-2" id="playlist">
       <?php if($lessons->num_rows > 0):
-            $first = null;
             $lessons->data_seek(0);
             $idx = 0;
             while($l = $lessons->fetch_assoc()):
-              if($idx === 0) $first = $l;
               $idx++;
+              $isYT = isYouTube($l['lesson_link']);
+              $embedUrl = $isYT ? getYTEmbedUrl($l['lesson_link']) : $l['lesson_link'];
       ?>
       <li class="lesson-item px-4 py-3 <?php echo $idx===1?'active':''; ?>"
-          data-url="<?php echo htmlspecialchars($l['lesson_link']); ?>"
-          data-name="<?php echo htmlspecialchars($l['lesson_name']); ?>">
+          data-url="<?php echo htmlspecialchars($embedUrl); ?>"
+          data-name="<?php echo htmlspecialchars($l['lesson_name']); ?>"
+          data-type="<?php echo $isYT ? 'youtube' : 'local'; ?>">
         <div class="flex items-start gap-3">
           <div class="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+            <?php if($isYT): ?>
+            <i class="fab fa-youtube text-red-400 text-xs lesson-icon"></i>
+            <?php else: ?>
             <i class="fas fa-play text-white/50 text-xs lesson-icon"></i>
+            <?php endif; ?>
           </div>
           <div class="min-w-0">
             <p class="text-white/80 text-sm font-medium leading-snug truncate"><?php echo htmlspecialchars($l['lesson_name']); ?></p>
@@ -106,13 +141,24 @@ $stuImg = ltrim(str_replace('../', '', $stu['stu_img'] ?? ''), '/');
 
   <!-- Video area -->
   <main class="flex-grow flex flex-col bg-slate-950">
-    <!-- Video player -->
-    <div class="relative bg-black flex-grow flex items-center justify-center">
-      <video id="videoarea" controls
-             class="max-h-full max-w-full w-full"
-             src="<?php echo htmlspecialchars($first['lesson_link'] ?? ''); ?>">
+    <!-- Player wrapper -->
+    <div class="relative bg-black flex-grow flex items-center justify-center" id="playerWrap">
+      <!-- YouTube iframe (hidden by default unless first is YT) -->
+      <iframe id="ytPlayer"
+              class="w-full h-full <?php echo $firstIsYT ? '' : 'hidden'; ?>"
+              src="<?php echo htmlspecialchars($firstEmbed); ?>"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+      </iframe>
+
+      <!-- Local video tag -->
+      <video id="localPlayer" controls
+             class="max-h-full max-w-full w-full <?php echo $firstIsYT ? 'hidden' : ''; ?>"
+             src="<?php echo !$firstIsYT ? htmlspecialchars($firstLink) : ''; ?>">
         Trình duyệt của bạn không hỗ trợ video HTML5.
       </video>
+
       <!-- Empty state -->
       <?php if($lessons->num_rows === 0): ?>
       <div class="absolute inset-0 flex flex-col items-center justify-center text-white/30">
@@ -125,38 +171,85 @@ $stuImg = ltrim(str_replace('../', '', $stu['stu_img'] ?? ''), '/');
     <!-- Lesson info bar -->
     <div class="bg-slate-900 border-t border-white/10 px-6 py-4">
       <h3 id="lessonTitle" class="text-white font-semibold text-sm">
-        <?php echo htmlspecialchars($first['lesson_name'] ?? 'Chọn bài học để bắt đầu'); ?>
+        <?php echo htmlspecialchars($firstName ?: 'Chọn bài học để bắt đầu'); ?>
       </h3>
       <p class="text-white/40 text-xs mt-1"><?php echo htmlspecialchars($course['course_name']); ?></p>
     </div>
   </main>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
-  const items    = document.querySelectorAll('.lesson-item');
-  const videoEl  = document.getElementById('videoarea');
-  const titleEl  = document.getElementById('lessonTitle');
+  const items      = document.querySelectorAll('.lesson-item');
+  const ytPlayerEl = document.getElementById('ytPlayer');
+  const localPlayer= document.getElementById('localPlayer');
+  const titleEl    = document.getElementById('lessonTitle');
+
+  // Func to auto play next
+  function playNextLesson() {
+      let nextItem = null;
+      let foundCurrent = false;
+      items.forEach(i => {
+          if (foundCurrent && !nextItem) nextItem = i;
+          if (i.classList.contains('active')) foundCurrent = true;
+      });
+      if (nextItem) nextItem.click();
+  }
+
+  // Local Video End Event
+  localPlayer.addEventListener('ended', playNextLesson);
+
+  // YouTube API Hook
+  let ytPlayerObj;
+  function onYouTubeIframeAPIReady() {
+      ytPlayerObj = new YT.Player('ytPlayer', {
+          events: {
+              'onStateChange': function(event) {
+                  if (event.data === YT.PlayerState.ENDED) {
+                      playNextLesson();
+                  }
+              }
+          }
+      });
+  }
 
   items.forEach(item => {
     item.addEventListener('click', () => {
-      // Update active state
-      items.forEach(i => { i.classList.remove('active'); });
+      // Active state
+      items.forEach(i => i.classList.remove('active'));
       item.classList.add('active');
 
-      const url  = item.dataset.url;
+      let url  = item.dataset.url;
       const name = item.dataset.name;
+      const type = item.dataset.type; // 'youtube' or 'local'
 
-      // Update video
-      videoEl.src = url;
-      videoEl.load();
-      videoEl.play().catch(()=>{});
-
-      // Update title
       titleEl.textContent = name;
+
+      if (type === 'youtube') {
+        // Ensure enablejsapi=1 is in URL if it isn't
+        if (!url.includes('enablejsapi=1')) {
+            url += (url.includes('?') ? '&' : '?') + 'enablejsapi=1';
+        }
+        
+        localPlayer.pause();
+        localPlayer.src = '';
+        localPlayer.classList.add('hidden');
+        
+        ytPlayerEl.src = url;
+        ytPlayerEl.classList.remove('hidden');
+      } else {
+        // Show local video, hide iframe
+        ytPlayerEl.src = '';
+        ytPlayerEl.classList.add('hidden');
+        localPlayer.src = url;
+        localPlayer.classList.remove('hidden');
+        localPlayer.load();
+        localPlayer.play().catch(()=>{});
+      }
     });
   });
 </script>
 
 <script src="../js/jquery.min.js"></script>
 </body>
-</html>
+</html>
