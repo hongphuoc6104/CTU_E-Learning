@@ -17,10 +17,6 @@ Core product shape after expansion:
 
 ## Relationship To Existing Plan Files
 
-- `PROJECT_AUDIT.md`
-  - completed migration and audit history
-- `PROJECT_FLOW_HARDENING_PLAN.md`
-  - logic-hardening wave for the current codebase
 - `PROJECT_EXPANSION_PLAN_INDEX.md`
   - master roadmap for the next expansion wave
 - `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
@@ -35,6 +31,8 @@ Core product shape after expansion:
   - admin approval, moderation, reporting, operations
 - `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
   - migration order, rollout, regression, release gates
+
+Previous audit and hardening waves are already completed and are treated as baseline context rather than active plan files in the repository.
 
 ## Global Product Scope
 
