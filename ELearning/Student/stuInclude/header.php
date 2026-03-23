@@ -1,19 +1,31 @@
-<?php 
+<?php
+require_once(__DIR__ . '/../../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../../csrf.php');
+$csrfToken = csrf_token();
 include_once('../dbConnection.php');
- if(!isset($_SESSION)){ 
-   session_start(); 
- } 
+
  if(isset($_SESSION['is_login'])){
   $stuLogEmail = $_SESSION['stuLogEmail'];
  } else {
-  echo "<script> location.href='../index.php'; </script>";
- }
+  header('Location: ../index.php');
+  exit;
+  }
  if(isset($stuLogEmail)){
-  $sql = "SELECT stu_name, stu_img FROM student WHERE stu_email = '$stuLogEmail'";
-  $result = $conn->query($sql);
-  $row = $result->fetch_assoc();
-  $stu_img = $row['stu_img'];
-  $stu_name = $row['stu_name'];
+  $stu_img = '';
+  $stu_name = 'Học viên';
+  $stmtProfile = $conn->prepare('SELECT stu_name, stu_img FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+  if($stmtProfile) {
+    $stmtProfile->bind_param('s', $stuLogEmail);
+    $stmtProfile->execute();
+    $result = $stmtProfile->get_result();
+    if($result && $result->num_rows === 1) {
+      $row = $result->fetch_assoc();
+      $stu_img = $row['stu_img'];
+      $stu_name = $row['stu_name'];
+    }
+    $stmtProfile->close();
+  }
  }
 ?>
 <!DOCTYPE html>
@@ -22,31 +34,15 @@ include_once('../dbConnection.php');
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+ <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
  <title><?php echo defined('TITLE') ? TITLE : 'CTU E-Learning'; ?> — CTU E-Learning</title>
 
- <!-- Bootstrap CSS -->
- <link rel="stylesheet" href="../css/bootstrap.min.css">
- <!-- Font Awesome CSS -->
  <!-- Font Awesome JS (SVG sprite, no webfonts needed) -->
- <script defer src="../js/all.min.js"></script>
- <!-- Tailwind CSS -->
- <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
- <script id="tailwind-config">
-  tailwind.config = {
-   darkMode: "class",
-   theme: {
-    extend: {
-     colors: {
-      "primary": "#003366",
-      "accent-green": "#10b981",
-      "background-light": "#f5f7f8",
-     },
-     fontFamily: { "display": ["Inter", "sans-serif"] },
-    },
-   },
-  }
- </script>
+  <script defer src="../js/all.min.js"></script>
+ <!-- Compiled Tailwind CSS -->
+ <link rel="stylesheet" href="../css/tailwind.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
  <style>
   .glass-header { background: rgba(255,255,255,0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   a:hover { text-decoration: none; }
@@ -55,8 +51,6 @@ include_once('../dbConnection.php');
   .stu-tab { transition: all 0.2s; border-bottom: 3px solid transparent; }
   .stu-tab.active-tab { color: #003366; border-bottom-color: #003366; font-weight: 700; }
  </style>
- <!-- Custom JS (cart count) -->
- <script type="text/javascript" src="../js/jquery.min.js"></script>
 </head>
 <body class="font-display bg-background-light text-slate-900 min-h-screen">
 
@@ -81,14 +75,19 @@ include_once('../dbConnection.php');
             <?php 
                 if (isset($_SESSION['is_login'])){
                     $stuEmail = $_SESSION['stuLogEmail'];
-                    $sqlAvatar = "SELECT stu_img, stu_name FROM student WHERE stu_email = '$stuEmail'";
-                    $resAvatar = $conn->query($sqlAvatar);
                     $stuImg = "";
                     $stuName = "Học viên";
-                    if ($resAvatar && $resAvatar->num_rows > 0) {
-                        $rowAvatar = $resAvatar->fetch_assoc();
-                        $stuImg = $rowAvatar['stu_img'];
-                        $stuName = $rowAvatar['stu_name'];
+                    $stmtAvatar = $conn->prepare('SELECT stu_img, stu_name FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+                    if ($stmtAvatar) {
+                        $stmtAvatar->bind_param('s', $stuEmail);
+                        $stmtAvatar->execute();
+                        $resAvatar = $stmtAvatar->get_result();
+                        if ($resAvatar && $resAvatar->num_rows > 0) {
+                            $rowAvatar = $resAvatar->fetch_assoc();
+                            $stuImg = $rowAvatar['stu_img'];
+                            $stuName = $rowAvatar['stu_name'];
+                        }
+                        $stmtAvatar->close();
                     }
                     if(empty($stuImg)){
                         $stuImg = '../image/stu/default_avatar.png';

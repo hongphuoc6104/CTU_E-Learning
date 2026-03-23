@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Đánh giá học viên');
 define('PAGE', 'feedback');
 include('./adminInclude/header.php');
@@ -11,8 +14,18 @@ if(!isset($_SESSION['is_admin_login'])){
 
 // Delete feedback
 if(isset($_POST['delete_fb'])){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='feedback.php';</script>";
+        exit;
+    }
+
     $fid = (int)$_POST['fid'];
-    $conn->query("UPDATE feedback SET is_deleted=1 WHERE f_id=$fid");
+    $stmtDelete = $conn->prepare('UPDATE feedback SET is_deleted = 1 WHERE f_id = ?');
+    if($stmtDelete) {
+        $stmtDelete->bind_param('i', $fid);
+        $stmtDelete->execute();
+        $stmtDelete->close();
+    }
     echo "<script>location.href='feedback.php';</script>"; exit;
 }
 
@@ -44,6 +57,7 @@ $result = $conn->query("SELECT f.*, s.stu_name, s.stu_email FROM feedback f LEFT
           <td class="px-6 py-4 text-center">
             <form method="POST" onsubmit="return confirm('Xoá đánh giá này?')">
               <input type="hidden" name="fid" value="<?php echo $r['f_id']; ?>">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
               <button type="submit" name="delete_fb"
                       class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition mx-auto">
                 <i class="fas fa-trash text-xs"></i>

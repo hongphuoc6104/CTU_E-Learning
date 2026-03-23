@@ -1,7 +1,7 @@
 <?php
-if(!isset($_SESSION)){ 
-  session_start(); 
-}
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+
 define('TITLE', 'Khóa học của tôi');
 define('PAGE', 'mycourse');
 include('./stuInclude/header.php'); 
@@ -25,14 +25,21 @@ include_once('../dbConnection.php');
 
     <?php 
     if(isset($stuLogEmail)){
-        $sql = "SELECT co.order_id, c.course_id, c.course_name, c.course_duration, c.course_desc, c.course_img, c.course_author, c.course_original_price, c.course_price, co.order_date 
-                FROM courseorder AS co 
-                JOIN course AS c ON c.course_id = co.course_id 
-                WHERE co.stu_email = '$stuLogEmail' AND co.is_deleted=0 AND c.is_deleted=0
-                ORDER BY co.order_date DESC";
-        $result = $conn->query($sql);
+        $stmt = $conn->prepare(
+            'SELECT co.order_id, c.course_id, c.course_name, c.course_duration, c.course_desc, c.course_img, c.course_author, c.course_original_price, c.course_price, co.order_date '
+            . 'FROM courseorder AS co '
+            . 'JOIN course AS c ON c.course_id = co.course_id '
+            . "WHERE co.stu_email = ? AND co.status = 'TXN_SUCCESS' AND co.is_deleted = 0 "
+            . 'ORDER BY co.order_date DESC'
+        );
+        $result = false;
+        if($stmt) {
+            $stmt->bind_param('s', $stuLogEmail);
+            $stmt->execute();
+            $result = $stmt->get_result();
+        }
         
-        if($result->num_rows > 0): ?>
+        if($result && $result->num_rows > 0): ?>
         <div class="space-y-5">
         <?php while($row = $result->fetch_assoc()): 
             $img_src = "../" . ltrim(str_replace('../', '', $row['course_img']), '/');
@@ -106,6 +113,9 @@ include_once('../dbConnection.php');
             </a>
         </div>
         <?php endif;
+        if($stmt) {
+            $stmt->close();
+        }
     } ?>
 </div>
 

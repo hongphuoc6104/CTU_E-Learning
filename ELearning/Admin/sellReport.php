@@ -1,5 +1,7 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+
 define('TITLE', 'Báo cáo doanh thu');
 define('PAGE', 'sellreport');
 include('./adminInclude/header.php');
@@ -13,20 +15,56 @@ $startdate = $_POST['startdate'] ?? date('Y-m-01');
 $enddate   = $_POST['enddate']   ?? date('Y-m-d');
 $searched  = isset($_POST['searchsubmit']);
 
-$result = null; $total = 0;
+$result = null;
+$total = 0;
+$reportError = '';
 if($searched){
-    $sql = "SELECT co.*, c.course_name, s.stu_name
-            FROM courseorder co
-            LEFT JOIN course c ON co.course_id=c.course_id
-            LEFT JOIN student s ON co.stu_email=s.stu_email
-            WHERE co.order_date BETWEEN ? AND ? AND co.is_deleted=0
-            ORDER BY co.order_date DESC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ss', $startdate, $enddate);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $sum = $conn->query("SELECT COALESCE(SUM(amount),0) as s FROM courseorder WHERE order_date BETWEEN '$startdate' AND '$enddate' AND is_deleted=0");
-    $total = $sum->fetch_assoc()['s'];
+    $startDateObj = DateTime::createFromFormat('Y-m-d', $startdate);
+    $endDateObj = DateTime::createFromFormat('Y-m-d', $enddate);
+    $isStartValid = $startDateObj && $startDateObj->format('Y-m-d') === $startdate;
+    $isEndValid = $endDateObj && $endDateObj->format('Y-m-d') === $enddate;
+
+    if(!$isStartValid || !$isEndValid) {
+        $reportError = 'Định dạng ngày không hợp lệ.';
+    } elseif($startdate > $enddate) {
+        $reportError = 'Khoảng ngày không hợp lệ: "Từ ngày" phải nhỏ hơn hoặc bằng "Đến ngày".';
+    } else {
+        $sql = "SELECT co.*, c.course_name, s.stu_name
+                FROM courseorder co
+                LEFT JOIN course c ON co.course_id=c.course_id
+                LEFT JOIN student s ON co.stu_email=s.stu_email
+                WHERE co.order_date BETWEEN ? AND ? AND co.status='TXN_SUCCESS' AND co.is_deleted=0
+                ORDER BY co.order_date DESC";
+        $stmt = $conn->prepare($sql);
+        if($stmt) {
+            $stmt->bind_param('ss', $startdate, $enddate);
+            if($stmt->execute()) {
+                $result = $stmt->get_result();
+            } else {
+                $reportError = 'Không thể tải dữ liệu báo cáo lúc này.';
+            }
+            $stmt->close();
+        } else {
+            $reportError = 'Không thể tải dữ liệu báo cáo lúc này.';
+        }
+
+        if($reportError === '') {
+            $sumStmt = $conn->prepare("SELECT COALESCE(SUM(amount),0) as s FROM courseorder WHERE order_date BETWEEN ? AND ? AND status='TXN_SUCCESS' AND is_deleted=0");
+            if($sumStmt) {
+                $sumStmt->bind_param('ss', $startdate, $enddate);
+                if($sumStmt->execute()) {
+                    $sum = $sumStmt->get_result();
+                    $sumRow = $sum ? $sum->fetch_assoc() : ['s' => 0];
+                    $total = (int) ($sumRow['s'] ?? 0);
+                } else {
+                    $reportError = 'Không thể tính tổng doanh thu lúc này.';
+                }
+                $sumStmt->close();
+            } else {
+                $reportError = 'Không thể tính tổng doanh thu lúc này.';
+            }
+        }
+    }
 }
 ?>
 
@@ -56,6 +94,12 @@ if($searched){
   </form>
 </div>
 
+<?php if($reportError !== ''): ?>
+<div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+  <i class="fas fa-exclamation-circle mr-2"></i><?php echo htmlspecialchars($reportError, ENT_QUOTES, 'UTF-8'); ?>
+</div>
+<?php endif; ?>
+
 <?php if($searched): ?>
 <!-- Summary -->
 <div class="grid grid-cols-2 gap-4 mb-6">
@@ -65,7 +109,7 @@ if($searched){
     </div>
     <div>
       <p class="text-xs text-slate-400 print:text-black">Số giao dịch</p>
-      <p class="text-2xl font-black text-slate-900 print:text-lg"><?php echo $result->num_rows; ?></p>
+      <p class="text-2xl font-black text-slate-900 print:text-lg"><?php echo $result ? $result->num_rows : 0; ?></p>
     </div>
   </div>
   <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center gap-4 print:border-none print:shadow-none print:p-2">
@@ -94,7 +138,7 @@ if($searched){
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100 print:divide-slate-300">
-      <?php if($result->num_rows > 0): $result->data_seek(0); while($r = $result->fetch_assoc()): ?>
+      <?php if($result && $result->num_rows > 0): $result->data_seek(0); while($r = $result->fetch_assoc()): ?>
         <tr class="hover:bg-slate-50 print:hover:bg-transparent">
           <td class="px-6 py-3 font-mono text-xs text-slate-400 print:px-2 print:py-2 print:text-black"><?php echo htmlspecialchars($r['order_id']); ?></td>
           <td class="px-6 py-3 font-medium text-slate-800 print:px-2 print:py-2 print:text-black"><?php echo htmlspecialchars($r['course_name'] ?? '—'); ?></td>

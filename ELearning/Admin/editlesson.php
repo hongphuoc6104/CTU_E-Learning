@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Sửa bài học');
 define('PAGE', 'lessons');
 include('./adminInclude/header.php');
@@ -12,7 +15,15 @@ if(!isset($_SESSION['is_admin_login'])){
 $lid = (int)($_GET['id'] ?? $_POST['lid'] ?? 0);
 if(!$lid){ echo "<script>location.href='lessons.php';</script>"; exit; }
 
-$row = $conn->query("SELECT * FROM lesson WHERE lesson_id=$lid")->fetch_assoc();
+$row = null;
+$loadStmt = $conn->prepare('SELECT * FROM lesson WHERE lesson_id = ? LIMIT 1');
+if($loadStmt) {
+    $loadStmt->bind_param('i', $lid);
+    $loadStmt->execute();
+    $loadResult = $loadStmt->get_result();
+    $row = $loadResult ? $loadResult->fetch_assoc() : null;
+    $loadStmt->close();
+}
 if(!$row){ echo "<script>location.href='lessons.php';</script>"; exit; }
 
 $msg = '';
@@ -22,20 +33,47 @@ if(isset($_POST['editLessonBtn'])){
     $link   = trim($_POST['lesson_link'] ?? '');
     $cid    = (int)($_POST['course_id'] ?? 0);
 
-    if(!$name || !$link || !$cid){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        $msg = ['type'=>'error', 'text'=>'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
+    } elseif(!$name || !$link || !$cid){
         $msg = ['type'=>'error', 'text'=>'Vui lòng điền đầy đủ thông tin bắt buộc.'];
     } else {
-        $cr = $conn->query("SELECT course_name FROM course WHERE course_id=$cid");
-        $course_name = $cr->num_rows ? $cr->fetch_assoc()['course_name'] : '';
-        $stmt = $conn->prepare("UPDATE lesson SET lesson_name=?, lesson_desc=?, lesson_link=?, course_id=?, course_name=? WHERE lesson_id=?");
-        $stmt->bind_param('sssisi', $name, $desc, $link, $cid, $course_name, $lid);
-        if($stmt->execute()){
-            $msg = ['type'=>'success', 'text'=>'Cập nhật bài học thành công!'];
-            $row = $conn->query("SELECT * FROM lesson WHERE lesson_id=$lid")->fetch_assoc();
-        } else {
-            $msg = ['type'=>'error', 'text'=>'Lỗi khi cập nhật.'];
+        $course_name = '';
+        $courseStmt = $conn->prepare('SELECT course_name FROM course WHERE course_id = ? AND is_deleted = 0 LIMIT 1');
+        if($courseStmt) {
+            $courseStmt->bind_param('i', $cid);
+            $courseStmt->execute();
+            $cr = $courseStmt->get_result();
+            if($cr && $cr->num_rows > 0) {
+                $course_name = (string) $cr->fetch_assoc()['course_name'];
+            }
+            $courseStmt->close();
         }
-        $stmt->close();
+
+        if($course_name === '') {
+            $msg = ['type'=>'error', 'text'=>'Khoá học không hợp lệ hoặc đã bị xoá.'];
+        } else {
+            $stmt = $conn->prepare("UPDATE lesson SET lesson_name=?, lesson_desc=?, lesson_link=?, course_id=?, course_name=? WHERE lesson_id=?");
+            if($stmt) {
+                $stmt->bind_param('sssisi', $name, $desc, $link, $cid, $course_name, $lid);
+                if($stmt->execute()){
+                    $msg = ['type'=>'success', 'text'=>'Cập nhật bài học thành công!'];
+                    $refreshStmt = $conn->prepare('SELECT * FROM lesson WHERE lesson_id = ? LIMIT 1');
+                    if($refreshStmt) {
+                        $refreshStmt->bind_param('i', $lid);
+                        $refreshStmt->execute();
+                        $refreshResult = $refreshStmt->get_result();
+                        $row = $refreshResult ? $refreshResult->fetch_assoc() : $row;
+                        $refreshStmt->close();
+                    }
+                } else {
+                    $msg = ['type'=>'error', 'text'=>'Lỗi khi cập nhật.'];
+                }
+                $stmt->close();
+            } else {
+                $msg = ['type'=>'error', 'text'=>'Lỗi khi cập nhật.'];
+            }
+        }
     }
 }
 
@@ -54,6 +92,7 @@ $courses = $conn->query("SELECT course_id, course_name FROM course WHERE is_dele
   <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
     <form method="POST" class="space-y-5">
       <input type="hidden" name="lid" value="<?php echo $lid; ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
       <!-- Course -->
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">Khoá học <span class="text-red-500">*</span></label>

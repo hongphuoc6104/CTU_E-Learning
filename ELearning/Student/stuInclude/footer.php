@@ -2,9 +2,21 @@
 // Cập nhật số đếm giỏ hàng
 if(isset($_SESSION['is_login'])) {
     $stuLogEmail = $_SESSION['stuLogEmail'];
-    $cart_sql = "SELECT COUNT(*) as cnt FROM cart WHERE stu_email='$stuLogEmail' AND is_deleted=0";
-    $cart_res = $conn->query($cart_sql);
-    $cart_count = ($cart_res && $cart_row = $cart_res->fetch_assoc()) ? $cart_row['cnt'] : 0;
+    $cart_count = 0;
+    $cartStmt = $conn->prepare(
+        'SELECT COUNT(*) as cnt '
+        . 'FROM cart c '
+        . 'INNER JOIN course co ON co.course_id = c.course_id '
+        . 'WHERE c.stu_email = ? AND c.is_deleted = 0 AND co.is_deleted = 0'
+    );
+    if ($cartStmt) {
+        $cartStmt->bind_param('s', $stuLogEmail);
+        $cartStmt->execute();
+        $cartRes = $cartStmt->get_result();
+        $cartRow = $cartRes ? $cartRes->fetch_assoc() : null;
+        $cart_count = isset($cartRow['cnt']) ? (int) $cartRow['cnt'] : 0;
+        $cartStmt->close();
+    }
 } else {
     $cart_count = 0;
 }
@@ -74,9 +86,6 @@ if(isset($_SESSION['is_login'])) {
 </footer>
 <!-- End Footer -->
 
-<!-- Bootstrap JS -->
-<script type="text/javascript" src="../js/popper.min.js"></script>
-<script type="text/javascript" src="../js/bootstrap.min.js"></script>
 <!-- Font Awesome JS -->
 <script type="text/javascript" src="../js/all.min.js"></script>
 <!-- Custom JS -->

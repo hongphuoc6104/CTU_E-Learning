@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Sửa khoá học');
 define('PAGE', 'courses');
 include('./adminInclude/header.php');
@@ -13,23 +16,40 @@ $cid = (int)($_GET['id'] ?? $_POST['cid'] ?? 0);
 if(!$cid){ echo "<script>location.href='courses.php';</script>"; exit; }
 
 // Load existing
-$row = $conn->query("SELECT * FROM course WHERE course_id=$cid")->fetch_assoc();
+$row = null;
+$loadStmt = $conn->prepare('SELECT * FROM course WHERE course_id = ? LIMIT 1');
+if($loadStmt) {
+    $loadStmt->bind_param('i', $cid);
+    $loadStmt->execute();
+    $loadResult = $loadStmt->get_result();
+    $row = $loadResult ? $loadResult->fetch_assoc() : null;
+    $loadStmt->close();
+}
 if(!$row){ echo "<script>location.href='courses.php';</script>"; exit; }
 
 $msg = '';
 if(isset($_POST['updateCourseBtn'])){
-    $name     = $_POST['course_name']           ?? '';
-    $desc     = $_POST['course_desc']           ?? '';
-    $author   = $_POST['course_author']         ?? '';
-    $duration = $_POST['course_duration']       ?? '';
-    $price    = (int)($_POST['course_price']    ?? 0);
-    $orig     = (int)($_POST['course_original_price'] ?? 0);
+    $name     = trim((string) ($_POST['course_name'] ?? ''));
+    $desc     = trim((string) ($_POST['course_desc'] ?? ''));
+    $author   = trim((string) ($_POST['course_author'] ?? ''));
+    $duration = trim((string) ($_POST['course_duration'] ?? ''));
+    $priceInput = filter_input(INPUT_POST, 'course_price', FILTER_VALIDATE_INT);
+    $origInput = filter_input(INPUT_POST, 'course_original_price', FILTER_VALIDATE_INT);
+    $price = $priceInput === false ? null : (int) $priceInput;
+    $orig = $origInput === false ? null : (int) $origInput;
 
-    if(!$name || !$desc || !$author || !$duration || !$price){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        $msg = ['type'=>'error', 'text'=>'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
+    } elseif($name === '' || $desc === '' || $author === '' || $duration === '' || $price === null || $orig === null){
         $msg = ['type'=>'error', 'text'=>'Vui lòng điền đầy đủ thông tin.'];
+    } elseif($price < 0 || $orig < 0) {
+        $msg = ['type'=>'error', 'text'=>'Giá khóa học không được là số âm.'];
+    } elseif($orig < $price) {
+        $msg = ['type'=>'error', 'text'=>'Giá gốc không được nhỏ hơn giá bán thực tế.'];
     } else {
         // Handle image upload
         $img_db = $row['course_img']; // keep existing
+        $newImageDiskPath = null;
         if(isset($_FILES['course_img']) && $_FILES['course_img']['error'] === UPLOAD_ERR_OK){
             $ext  = strtolower(pathinfo($_FILES['course_img']['name'], PATHINFO_EXTENSION));
             $allowed = ['jpg','jpeg','png','webp'];
@@ -43,19 +63,40 @@ if(isset($_POST['updateCourseBtn'])){
             }
             $filename = time().'_'.basename($_FILES['course_img']['name']);
             $disk = __DIR__.'/../image/courseimg/'.$filename;
-            move_uploaded_file($_FILES['course_img']['tmp_name'], $disk);
+            if(!move_uploaded_file($_FILES['course_img']['tmp_name'], $disk)) {
+                $msg = ['type'=>'error', 'text'=>'Không thể lưu ảnh khoá học.'];
+                goto render;
+            }
+            $newImageDiskPath = $disk;
             $img_db = 'image/courseimg/'.$filename;
         }
 
         $stmt = $conn->prepare("UPDATE course SET course_name=?, course_desc=?, course_author=?, course_duration=?, course_price=?, course_original_price=?, course_img=? WHERE course_id=?");
-        $stmt->bind_param('ssssiiis', $name, $desc, $author, $duration, $price, $orig, $img_db, $cid);
-        if($stmt->execute()){
-            $msg = ['type'=>'success', 'text'=>'Cập nhật khoá học thành công!'];
-            $row = $conn->query("SELECT * FROM course WHERE course_id=$cid")->fetch_assoc();
+        if($stmt) {
+            $stmt->bind_param('ssssiisi', $name, $desc, $author, $duration, $price, $orig, $img_db, $cid);
+            if($stmt->execute()){
+                $msg = ['type'=>'success', 'text'=>'Cập nhật khoá học thành công!'];
+                $refreshStmt = $conn->prepare('SELECT * FROM course WHERE course_id = ? LIMIT 1');
+                if($refreshStmt) {
+                    $refreshStmt->bind_param('i', $cid);
+                    $refreshStmt->execute();
+                    $refreshResult = $refreshStmt->get_result();
+                    $row = $refreshResult ? $refreshResult->fetch_assoc() : $row;
+                    $refreshStmt->close();
+                }
+            } else {
+                if($newImageDiskPath !== null && is_file($newImageDiskPath)) {
+                    @unlink($newImageDiskPath);
+                }
+                $msg = ['type'=>'error', 'text'=>'Lỗi khi cập nhật.'];
+            }
+            $stmt->close();
         } else {
+            if($newImageDiskPath !== null && is_file($newImageDiskPath)) {
+                @unlink($newImageDiskPath);
+            }
             $msg = ['type'=>'error', 'text'=>'Lỗi khi cập nhật.'];
         }
-        $stmt->close();
     }
 }
 
@@ -75,6 +116,7 @@ $img_display = ltrim(str_replace('../', '', $row['course_img'] ?? ''), '/');
   <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
     <form method="POST" enctype="multipart/form-data" class="space-y-5">
       <input type="hidden" name="cid" value="<?php echo $cid; ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
 
       <div><label class="block text-sm font-semibold text-slate-700 mb-2">Tên khoá học <span class="text-red-500">*</span></label>
         <input type="text" name="course_name" value="<?php echo htmlspecialchars($row['course_name']); ?>" required

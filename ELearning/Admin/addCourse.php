@@ -1,7 +1,8 @@
 <?php
-if(!isset($_SESSION)){ 
-  session_start(); 
-}
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Thêm khoá học');
 include('./adminInclude/header.php'); 
 include('../dbConnection.php');
@@ -11,47 +12,67 @@ include('../dbConnection.php');
  } else {
   echo "<script> location.href='../index.php'; </script>";
  }
- if(isset($_REQUEST['courseSubmitBtn'])){
-  // Checking for Empty Fields
-  if(($_REQUEST['course_name'] == "") || ($_REQUEST['course_desc'] == "") || ($_REQUEST['course_author'] == "") || ($_REQUEST['course_duration'] == "") || ($_REQUEST['course_price'] == "") || ($_REQUEST['course_original_price'] == "")){
-   // msg displayed if required field missi   $msg = ['type'=>'warning', 'text'=>'Vui lòng điền đầy đủ tất cả các trường dữ liệu!'];
+ if(isset($_POST['courseSubmitBtn'])){
+  if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+    $msg = ['type'=>'error', 'text'=>'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
   } else {
-   // Assigning User Values to Variable
-   $course_name = $_REQUEST['course_name'];
-   $course_desc = $_REQUEST['course_desc'];
-   $course_author = $_REQUEST['course_author'];
-   $course_duration = $_REQUEST['course_duration'];
-   $course_price = $_REQUEST['course_price'];
-   $course_original_price = $_REQUEST['course_original_price'];
-   
-   $course_image = $_FILES['course_img']['name']; 
-   $course_image_temp = $_FILES['course_img']['tmp_name'];
-   $image_size = $_FILES['course_img']['size'];
-   $image_error = $_FILES['course_img']['error'];
+    $course_name = trim((string) ($_POST['course_name'] ?? ''));
+    $course_desc = trim((string) ($_POST['course_desc'] ?? ''));
+    $course_author = trim((string) ($_POST['course_author'] ?? ''));
+    $course_duration = trim((string) ($_POST['course_duration'] ?? ''));
+    $course_price = filter_input(INPUT_POST, 'course_price', FILTER_VALIDATE_INT);
+    $course_original_price = filter_input(INPUT_POST, 'course_original_price', FILTER_VALIDATE_INT);
 
-   // Image Validation
-   $allowed_types = array("jpg", "jpeg", "png", "webp");
-   $file_ext = strtolower(pathinfo($course_image, PATHINFO_EXTENSION));
+    if($course_name === '' || $course_desc === '' || $course_author === '' || $course_duration === '' || $course_price === false || $course_original_price === false){
+      $msg = ['type'=>'warning', 'text'=>'Vui lòng điền đầy đủ tất cả các trường dữ liệu!'];
+    } elseif($course_price < 0 || $course_original_price < 0) {
+      $msg = ['type'=>'warning', 'text'=>'Giá khóa học không được là số âm.'];
+    } elseif($course_original_price < $course_price) {
+      $msg = ['type'=>'warning', 'text'=>'Giá gốc không được nhỏ hơn giá bán thực tế.'];
+    } else {
+      $course_image = $_FILES['course_img']['name'] ?? '';
+      $course_image_temp = $_FILES['course_img']['tmp_name'] ?? '';
+      $image_size = (int) ($_FILES['course_img']['size'] ?? 0);
+      $image_error = (int) ($_FILES['course_img']['error'] ?? UPLOAD_ERR_NO_FILE);
 
-   if ($image_error == UPLOAD_ERR_NO_FILE) {
-       $msg = ['type'=>'warning', 'text'=>'Vui lòng tải lên một ảnh đại diện khoá học!'];
-   } else if (!in_array($file_ext, $allowed_types)) {
-       $msg = ['type'=>'error', 'text'=>'Định dạng ảnh không hỗ trợ. Chỉ chấp nhận jpg, jpeg, png, webp.'];
-   } else if ($image_size > 2097152) { // 2MB
-       $msg = ['type'=>'error', 'text'=>'Dung lượng ảnh lớn hơn mức cho phép (2MB).'];
-   } else {
-     $filename = time() . '_' . basename($course_image);
-     $img_disk = __DIR__ . '/../image/courseimg/' . $filename;
-     $img_db   = 'image/courseimg/' . $filename;
-     move_uploaded_file($course_image_temp, $img_disk);
+      $allowed_types = array('jpg', 'jpeg', 'png', 'webp');
+      $file_ext = strtolower(pathinfo($course_image, PATHINFO_EXTENSION));
 
-     $sql = "INSERT INTO course (course_name, course_desc, course_author, course_img, course_duration, course_price, course_original_price) VALUES ('$course_name', '$course_desc','$course_author', '$img_db', '$course_duration', '$course_price', '$course_original_price')";
-     if($conn->query($sql) == TRUE){
-      $msg = ['type'=>'success', 'text'=>'Thêm khoá học thành công!'];
-     } else {
-      $msg = ['type'=>'error', 'text'=>'Không thể thêm khoá học.'];
-     }
-   }
+      if ($image_error === UPLOAD_ERR_NO_FILE) {
+          $msg = ['type'=>'warning', 'text'=>'Vui lòng tải lên một ảnh đại diện khoá học!'];
+      } else if (!in_array($file_ext, $allowed_types, true)) {
+          $msg = ['type'=>'error', 'text'=>'Định dạng ảnh không hỗ trợ. Chỉ chấp nhận jpg, jpeg, png, webp.'];
+      } else if ($image_size > 2097152) { // 2MB
+          $msg = ['type'=>'error', 'text'=>'Dung lượng ảnh lớn hơn mức cho phép (2MB).'];
+      } else {
+        $filename = time() . '_' . basename($course_image);
+        $img_disk = __DIR__ . '/../image/courseimg/' . $filename;
+        $img_db   = 'image/courseimg/' . $filename;
+
+        if(!move_uploaded_file($course_image_temp, $img_disk)) {
+          $msg = ['type'=>'error', 'text'=>'Không thể lưu ảnh khoá học.'];
+        } else {
+          $stmtInsert = $conn->prepare('INSERT INTO course (course_name, course_desc, course_author, course_img, course_duration, course_price, course_original_price, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 0)');
+          if($stmtInsert) {
+            $stmtInsert->bind_param('sssssii', $course_name, $course_desc, $course_author, $img_db, $course_duration, $course_price, $course_original_price);
+            if($stmtInsert->execute()) {
+              $msg = ['type'=>'success', 'text'=>'Thêm khoá học thành công!'];
+            } else {
+              if(is_file($img_disk)) {
+                @unlink($img_disk);
+              }
+              $msg = ['type'=>'error', 'text'=>'Không thể thêm khoá học.'];
+            }
+            $stmtInsert->close();
+          } else {
+            if(is_file($img_disk)) {
+              @unlink($img_disk);
+            }
+            $msg = ['type'=>'error', 'text'=>'Không thể thêm khoá học.'];
+          }
+        }
+      }
+    }
   }
 }
 ?>
@@ -82,6 +103,7 @@ include('../dbConnection.php');
     <!-- Form Card -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
         <form action="" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
 
             <!-- Tên khoá học -->
             <div>

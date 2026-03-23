@@ -1,5 +1,7 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+
 if(!isset($_SESSION['is_login'])){ echo "<script>location.href='../index.php';</script>"; exit; }
 
 $stuEmail = $_SESSION['stuLogEmail'];
@@ -9,18 +11,41 @@ include('../dbConnection.php');
 if(!isset($_GET['course_id'])) { echo "<script>location.href='myCourse.php';</script>"; exit; }
 $course_id = (int)$_GET['course_id'];
 
-$own = $conn->query("SELECT 1 FROM courseorder WHERE stu_email='$stuEmail' AND course_id=$course_id AND is_deleted=0 LIMIT 1");
-if($own->num_rows === 0) { echo "<script>location.href='myCourse.php';</script>"; exit; }
+$ownStmt = $conn->prepare("SELECT 1 FROM courseorder WHERE stu_email = ? AND course_id = ? AND status = 'TXN_SUCCESS' AND is_deleted = 0 LIMIT 1");
+if(!$ownStmt) { echo "<script>location.href='myCourse.php';</script>"; exit; }
+$ownStmt->bind_param('si', $stuEmail, $course_id);
+$ownStmt->execute();
+$own = $ownStmt->get_result();
+if(!$own || $own->num_rows === 0) { $ownStmt->close(); echo "<script>location.href='myCourse.php';</script>"; exit; }
+$ownStmt->close();
 
 // Get course info
-$course = $conn->query("SELECT * FROM course WHERE course_id=$course_id AND is_deleted=0")->fetch_assoc();
+$courseStmt = $conn->prepare('SELECT * FROM course WHERE course_id = ? LIMIT 1');
+if(!$courseStmt) { echo "<script>location.href='myCourse.php';</script>"; exit; }
+$courseStmt->bind_param('i', $course_id);
+$courseStmt->execute();
+$courseResult = $courseStmt->get_result();
+$course = $courseResult ? $courseResult->fetch_assoc() : null;
+$courseStmt->close();
 if(!$course) { echo "<script>location.href='myCourse.php';</script>"; exit; }
 
 // Get lessons
-$lessons = $conn->query("SELECT * FROM lesson WHERE course_id=$course_id ORDER BY lesson_id");
+$lessonStmt = $conn->prepare('SELECT * FROM lesson WHERE course_id = ? AND is_deleted = 0 ORDER BY lesson_id');
+if(!$lessonStmt) { echo "<script>location.href='myCourse.php';</script>"; exit; }
+$lessonStmt->bind_param('i', $course_id);
+$lessonStmt->execute();
+$lessons = $lessonStmt->get_result();
 
 // Student info
-$stu = $conn->query("SELECT stu_name, stu_img FROM student WHERE stu_email='$stuEmail'")->fetch_assoc();
+$stuStmt = $conn->prepare('SELECT stu_name, stu_img FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+$stu = [];
+if($stuStmt) {
+    $stuStmt->bind_param('s', $stuEmail);
+    $stuStmt->execute();
+    $stuResult = $stuStmt->get_result();
+    $stu = $stuResult ? ($stuResult->fetch_assoc() ?: []) : [];
+    $stuStmt->close();
+}
 $stuImg = ltrim(str_replace('../', '', $stu['stu_img'] ?? ''), '/');
 
 // Helper: convert any YouTube URL → embed URL
@@ -59,12 +84,7 @@ if ($lessons->num_rows > 0) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($course['course_name']); ?> — CTU E-Learning</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-  <script>
-    tailwind.config = {
-      theme: { extend: { colors: { primary: '#003366', accent: '#10b981' }, fontFamily: { sans: ['Inter','sans-serif'] } } }
-    }
-  </script>
+  <link rel="stylesheet" href="../css/tailwind.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script defer src="../js/all.min.js"></script>
   <style>
@@ -250,6 +270,6 @@ if ($lessons->num_rows > 0) {
   });
 </script>
 
-<script src="../js/jquery.min.js"></script>
+<?php if(isset($lessonStmt) && $lessonStmt) { $lessonStmt->close(); } ?>
 </body>
-</html>
+</html>

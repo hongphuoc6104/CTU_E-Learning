@@ -5,7 +5,7 @@
 ?>  
 <!-- Page Header Header -->
 <div class="pt-32 pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
-    <div class="absolute inset-0 bg-[url('image/coursebanner.jpg')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_60%)]"></div>
     <div class="absolute inset-0 bg-primary/40"></div>
     <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
         <h1 class="text-4xl md:text-5xl font-black text-white mb-4">Danh Sách Khóa Học</h1>
@@ -21,21 +21,28 @@
         <?php
             $sql = "SELECT * FROM course WHERE is_deleted=0";
             $result = $conn->query($sql);
-            if($result->num_rows > 0){ 
+            if($result && $result->num_rows > 0){ 
                 while($row = $result->fetch_assoc()){
                 $course_id = $row['course_id'];
                 $img_path = ltrim(str_replace('../', '', $row['course_img']), '/');
                 $price = number_format($row['course_price']);
                 $original_price = number_format($row['course_original_price']);
+                $courseNameSafe = htmlspecialchars($row['course_name'], ENT_QUOTES, 'UTF-8');
+                $courseDescSafe = htmlspecialchars($row['course_desc'], ENT_QUOTES, 'UTF-8');
                 
                 // Check if already purchased
                 $isPurchased = false;
                 if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
                     $stuEmail = $_SESSION['stuLogEmail'];
-                    $checkSql = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
-                    $checkRes = $conn->query($checkSql);
-                    if($checkRes && $checkRes->num_rows > 0){
-                        $isPurchased = true;
+                    $checkStmt = $conn->prepare("SELECT 1 FROM courseorder WHERE stu_email = ? AND course_id = ? AND status = 'TXN_SUCCESS' AND is_deleted = 0 LIMIT 1");
+                    if($checkStmt) {
+                        $checkStmt->bind_param('si', $stuEmail, $course_id);
+                        $checkStmt->execute();
+                        $checkRes = $checkStmt->get_result();
+                        if($checkRes && $checkRes->num_rows > 0){
+                            $isPurchased = true;
+                        }
+                        $checkStmt->close();
                     }
                 }
 
@@ -57,8 +64,8 @@
                         }
                         echo '
                         <div class="p-5 flex flex-col flex-grow">
-                            <h3 class="text-base font-bold text-slate-900 mb-2 line-clamp-2 leading-snug">'.$row['course_name'].'</h3>
-                            <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed flex-grow">'.$row['course_desc'].'</p>
+                            <h3 class="text-base font-bold text-slate-900 mb-2 line-clamp-2 leading-snug">'.$courseNameSafe.'</h3>
+                            <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed flex-grow">'.$courseDescSafe.'</p>
                             <div class="flex items-end justify-between mt-auto pt-4 border-t border-slate-50">
                                 <div>
                                     <p class="text-[11px] text-slate-400 line-through m-0">'.$original_price.' đ</p>

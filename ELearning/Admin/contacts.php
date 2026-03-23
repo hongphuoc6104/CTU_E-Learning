@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Tin nhắn Liên hệ');
 define('PAGE', 'contacts');
 include('./adminInclude/header.php');
@@ -11,8 +14,18 @@ if(!isset($_SESSION['is_admin_login'])){
 
 // Xoá mềm tin nhắn
 if(isset($_POST['delete_contact'])) {
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='contacts.php';</script>";
+        exit;
+    }
+
     $cid = (int)$_POST['cid'];
-    $conn->query("UPDATE contact_message SET is_deleted=1 WHERE c_id = $cid");
+    $stmt = $conn->prepare('UPDATE contact_message SET is_deleted = 1 WHERE c_id = ?');
+    if($stmt) {
+        $stmt->bind_param('i', $cid);
+        $stmt->execute();
+        $stmt->close();
+    }
     echo "<script>location.href='contacts.php';</script>"; exit;
 }
 
@@ -54,11 +67,12 @@ $result = $conn->query($sql);
              <?php echo nl2br(htmlspecialchars($row['message'])); ?>
           </td>
           <td class="px-6 py-4 text-center">
-            <form method="POST" onsubmit="return confirm('Xóa tin nhắn này?');">
-               <input type="hidden" name="cid" value="<?php echo $row['c_id']; ?>">
-               <button type="submit" name="delete_contact" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors mx-auto flex items-center justify-center">
-                 <i class="fas fa-trash text-xs"></i>
-               </button>
+             <form method="POST" onsubmit="return confirm('Xóa tin nhắn này?');">
+                <input type="hidden" name="cid" value="<?php echo $row['c_id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <button type="submit" name="delete_contact" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors mx-auto flex items-center justify-center">
+                  <i class="fas fa-trash text-xs"></i>
+                </button>
             </form>
           </td>
         </tr>

@@ -1,10 +1,13 @@
 <?php
-// Start session if not started
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../../csrf.php');
+$csrfToken = csrf_token();
 
 // Redirect if not admin
 if(!isset($_SESSION['is_admin_login'])){
-    echo "<script>location.href='../index.php';</script>";
+    header('Location: ../index.php');
+    exit;
 }
 $adminEmail = $_SESSION['adminLogEmail'] ?? '';
 $adminName  = explode('@', $adminEmail)[0] ?? 'Admin';
@@ -20,25 +23,11 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
   <title><?php echo $pageTitle; ?> — CTU Admin</title>
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary:  '#003366',
-            sidebar:  '#001f40',
-            accent:   '#10b981',
-            accentbg: '#064e3b',
-          },
-          fontFamily: { sans: ['Inter', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
+  <!-- Compiled Tailwind CSS -->
+  <link rel="stylesheet" href="../css/tailwind.css">
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -129,12 +118,28 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
         <i class="fas fa-envelope-open-text"></i> Hộp thư liên hệ
       </a>
       <?php
-        // Trash count badge - only if $conn available
         $trashCount = 0;
         if(isset($conn)) {
-            foreach(['course','lesson','student','feedback','courseorder','contact_message'] as $tbl) {
-                $r = $conn->query("SELECT COUNT(*) as c FROM `$tbl` WHERE is_deleted=1");
-                if($r) $trashCount += $r->fetch_assoc()['c'];
+            $countSqlByTable = [
+                'course' => 'SELECT COUNT(*) AS c FROM course WHERE is_deleted = 1',
+                'lesson' => 'SELECT COUNT(*) AS c FROM lesson WHERE is_deleted = 1',
+                'student' => 'SELECT COUNT(*) AS c FROM student WHERE is_deleted = 1',
+                'feedback' => 'SELECT COUNT(*) AS c FROM feedback WHERE is_deleted = 1',
+                'courseorder' => 'SELECT COUNT(*) AS c FROM courseorder WHERE is_deleted = 1',
+                'contact_message' => 'SELECT COUNT(*) AS c FROM contact_message WHERE is_deleted = 1',
+            ];
+
+            foreach($countSqlByTable as $sql) {
+                $stmt = $conn->prepare($sql);
+                if(!$stmt) {
+                    continue;
+                }
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if($result && ($row = $result->fetch_assoc())) {
+                    $trashCount += (int)$row['c'];
+                }
+                $stmt->close();
             }
         }
       ?>

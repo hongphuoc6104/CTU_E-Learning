@@ -1,42 +1,82 @@
-// Ajax Call for admin Login Verification
-function checkAdminLogin() {
-  var adminLogEmail = $("#adminLogEmail").val();
-  var adminLogPass = $("#adminLogPass").val();
-  $.ajax({
-    url: "Admin/admin.php",
-    type: "post",
-    data: {
-      checkLogemail: "checklogmail",
+async function postForm(url, payload) {
+  const body = new URLSearchParams();
+  Object.keys(payload).forEach((key) => {
+    body.append(key, payload[key]);
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: body.toString()
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(text || 'Request failed');
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (_error) {
+    return text;
+  }
+}
+
+function setAdminStatus(html) {
+  const status = document.getElementById('statusAdminLogMsg');
+  if (status) {
+    status.innerHTML = html;
+  }
+}
+
+async function checkAdminLogin() {
+  const emailInput = document.getElementById('adminLogEmail');
+  const passInput = document.getElementById('adminLogPass');
+  const adminLogEmail = emailInput ? emailInput.value.trim() : '';
+  const adminLogPass = passInput ? passInput.value : '';
+
+  if (adminLogEmail === '' || adminLogPass.trim() === '') {
+    setAdminStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Vui lòng nhập đầy đủ thông tin đăng nhập.</span>');
+    return;
+  }
+
+  try {
+    const data = await postForm('Admin/admin.php', {
+      checkLogemail: 'checklogmail',
       adminLogEmail: adminLogEmail,
       adminLogPass: adminLogPass
-    },
-    success: function(data) {
-      console.log(data);
-      if (data == 0) {
-        $("#statusAdminLogMsg").html(
-          '<small class="alert alert-danger"> Email hoặc mật khẩu không đúng! </small>'
-        );
-      } else if (data == 1) {
-        $("#statusAdminLogMsg").html(
-          '<small class="alert alert-success"> Đăng nhập thành công! </small>'
-        );
-        // Empty Login Fields
-        clearAdminLoginField();
-        setTimeout(() => {
-          window.location.href = "Admin/adminDashboard.php";
-        }, 1000);
-      }
+    });
+
+    if (Number(data) === 0) {
+      setAdminStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Email hoặc mật khẩu không đúng!</span>');
+      return;
     }
-  });
+
+    setAdminStatus('<span class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">Đăng nhập thành công!</span>');
+    clearAdminLoginField();
+    window.setTimeout(() => {
+      window.location.href = 'Admin/adminDashboard.php';
+    }, 700);
+  } catch (_error) {
+    setAdminStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Không thể kết nối tới máy chủ.</span>');
+  }
 }
 
-// Empty Login Fields
 function clearAdminLoginField() {
-  $("#adminLoginForm").trigger("reset");
+  const form = document.getElementById('adminLoginForm');
+  if (form) {
+    form.reset();
+  }
 }
 
-// Empty Login Fields and Status Msg
 function clearAdminLoginWithStatus() {
-  $("#statusAdminLogMsg").html(" ");
+  setAdminStatus('');
   clearAdminLoginField();
 }
+
+window.checkAdminLogin = checkAdminLogin;
+window.clearAdminLoginField = clearAdminLoginField;
+window.clearAdminLoginWithStatus = clearAdminLoginWithStatus;

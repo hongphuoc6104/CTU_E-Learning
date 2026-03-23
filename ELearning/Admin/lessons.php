@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Bài học');
 define('PAGE', 'lessons');
 include('./adminInclude/header.php');
@@ -11,8 +14,18 @@ if(!isset($_SESSION['is_admin_login'])){
 
 // Delete lesson
 if(isset($_POST['delete_lesson'])){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='lessons.php';</script>";
+        exit;
+    }
+
     $lid = (int)$_POST['lid'];
-    $conn->query("UPDATE lesson SET is_deleted=1 WHERE lesson_id=$lid");
+    $deleteStmt = $conn->prepare('UPDATE lesson SET is_deleted = 1 WHERE lesson_id = ?');
+    if($deleteStmt) {
+        $deleteStmt->bind_param('i', $lid);
+        $deleteStmt->execute();
+        $deleteStmt->close();
+    }
     echo "<script>location.href='lessons.php';</script>"; exit;
 }
 
@@ -20,11 +33,53 @@ if(isset($_POST['delete_lesson'])){
 $filter_course = (int)($_GET['course_id'] ?? 0);
 $search = trim($_GET['q'] ?? '');
 
-$sql = "SELECT l.*, c.course_name FROM lesson l LEFT JOIN course c ON l.course_id=c.course_id WHERE l.is_deleted=0";
-if($filter_course) $sql .= " AND l.course_id=$filter_course";
-if($search) $sql .= " AND (l.lesson_name LIKE '%".addslashes($search)."%')";
-$sql .= " ORDER BY l.course_id, l.lesson_id";
-$result = $conn->query($sql);
+$result = false;
+$lessonsStmt = null;
+
+if($filter_course && $search !== '') {
+    $lessonsStmt = $conn->prepare(
+        'SELECT l.*, c.course_name FROM lesson l '
+        . 'LEFT JOIN course c ON l.course_id = c.course_id '
+        . 'WHERE l.is_deleted = 0 AND l.course_id = ? AND l.lesson_name LIKE ? '
+        . 'ORDER BY l.course_id, l.lesson_id'
+    );
+    if($lessonsStmt) {
+        $searchLike = '%' . $search . '%';
+        $lessonsStmt->bind_param('is', $filter_course, $searchLike);
+    }
+} elseif($filter_course) {
+    $lessonsStmt = $conn->prepare(
+        'SELECT l.*, c.course_name FROM lesson l '
+        . 'LEFT JOIN course c ON l.course_id = c.course_id '
+        . 'WHERE l.is_deleted = 0 AND l.course_id = ? '
+        . 'ORDER BY l.course_id, l.lesson_id'
+    );
+    if($lessonsStmt) {
+        $lessonsStmt->bind_param('i', $filter_course);
+    }
+} elseif($search !== '') {
+    $lessonsStmt = $conn->prepare(
+        'SELECT l.*, c.course_name FROM lesson l '
+        . 'LEFT JOIN course c ON l.course_id = c.course_id '
+        . 'WHERE l.is_deleted = 0 AND l.lesson_name LIKE ? '
+        . 'ORDER BY l.course_id, l.lesson_id'
+    );
+    if($lessonsStmt) {
+        $searchLike = '%' . $search . '%';
+        $lessonsStmt->bind_param('s', $searchLike);
+    }
+} else {
+    $lessonsStmt = $conn->prepare(
+        'SELECT l.*, c.course_name FROM lesson l '
+        . 'LEFT JOIN course c ON l.course_id = c.course_id '
+        . 'WHERE l.is_deleted = 0 ORDER BY l.course_id, l.lesson_id'
+    );
+}
+
+if($lessonsStmt) {
+    $lessonsStmt->execute();
+    $result = $lessonsStmt->get_result();
+}
 
 // All courses for dropdown (non-deleted)
 $courses_all = $conn->query("SELECT course_id, course_name FROM course WHERE is_deleted=0 ORDER BY course_name");
@@ -70,7 +125,7 @@ $courses_all = $conn->query("SELECT course_id, course_name FROM course WHERE is_
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
-      <?php if($result->num_rows > 0): while($row = $result->fetch_assoc()): ?>
+      <?php if($result && $result->num_rows > 0): while($row = $result->fetch_assoc()): ?>
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="px-6 py-3 font-semibold text-slate-800"><?php echo htmlspecialchars($row['lesson_name']); ?></td>
           <td class="px-6 py-3">
@@ -91,6 +146,7 @@ $courses_all = $conn->query("SELECT course_id, course_name FROM course WHERE is_
               </a>
               <form method="POST" onsubmit="return confirm('Xoá bài học này?')">
                 <input type="hidden" name="lid" value="<?php echo $row['lesson_id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <button type="submit" name="delete_lesson"
                         class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition">
                   <i class="fas fa-trash text-xs"></i>
@@ -106,5 +162,7 @@ $courses_all = $conn->query("SELECT course_id, course_name FROM course WHERE is_
     </table>
   </div>
 </div>
+
+<?php if($lessonsStmt) { $lessonsStmt->close(); } ?>
 
 <?php include('./adminInclude/footer.php'); ?>

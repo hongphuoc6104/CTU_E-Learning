@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Thùng rác');
 define('PAGE', 'trash');
 include('./adminInclude/header.php');
@@ -15,6 +18,11 @@ $type   = $_POST['type']   ?? '';
 $id     = (int)($_POST['id'] ?? 0);
 
 if($action && $type && $id) {
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='trash.php';</script>";
+        exit;
+    }
+
     $map = [
         'course'      => ['table' => 'course',      'pk' => 'course_id'],
         'lesson'      => ['table' => 'lesson',       'pk' => 'lesson_id'],
@@ -27,21 +35,43 @@ if($action && $type && $id) {
         $t  = $map[$type]['table'];
         $pk = $map[$type]['pk'];
         if($action === 'restore') {
-            $conn->query("UPDATE `$t` SET is_deleted=0 WHERE `$pk`=$id");
+            $stmt = $conn->prepare("UPDATE `$t` SET is_deleted = 0 WHERE `$pk` = ?");
+            if($stmt) {
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            }
         } elseif($action === 'permanent') {
-            $conn->query("DELETE FROM `$t` WHERE `$pk`=$id");
+            $stmt = $conn->prepare("DELETE FROM `$t` WHERE `$pk` = ?");
+            if($stmt) {
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $stmt->close();
+            }
         }
     }
     echo "<script>location.href='trash.php';</script>"; exit;
 }
 
 // ===== FETCH deleted records =====
-$deleted_courses  = $conn->query("SELECT course_id as id, course_name as name, 'course' as type FROM course WHERE is_deleted=1 ORDER BY course_id DESC");
-$deleted_lessons  = $conn->query("SELECT lesson_id as id, lesson_name as name, 'lesson' as type FROM lesson WHERE is_deleted=1 ORDER BY lesson_id DESC");
-$deleted_students = $conn->query("SELECT stu_id as id, CONCAT(stu_name,' (',stu_email,')') as name, 'student' as type FROM student WHERE is_deleted=1 ORDER BY stu_id DESC");
-$deleted_feedback = $conn->query("SELECT f_id as id, CONCAT(LEFT(f_content,60),'…') as name, 'feedback' as type FROM feedback WHERE is_deleted=1 ORDER BY f_id DESC");
-$deleted_orders   = $conn->query("SELECT co.co_id as id, CONCAT(co.order_id,' – ',COALESCE(c.course_name,'?'),' | ',co.stu_email) as name, 'courseorder' as type FROM courseorder co LEFT JOIN course c ON co.course_id=c.course_id WHERE co.is_deleted=1 ORDER BY co.co_id DESC");
-$deleted_contacts = $conn->query("SELECT c_id as id, CONCAT(name,' - ',LEFT(message,40),'…') as name, 'contact' as type FROM contact_message WHERE is_deleted=1 ORDER BY c_id DESC");
+function trashFetchAll(mysqli $conn, string $sql): ?mysqli_result {
+    $stmt = $conn->prepare($sql);
+    if(!$stmt) {
+        return null;
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    return $result;
+}
+
+$deleted_courses  = trashFetchAll($conn, "SELECT course_id AS id, course_name AS name, 'course' AS type FROM course WHERE is_deleted = 1 ORDER BY course_id DESC");
+$deleted_lessons  = trashFetchAll($conn, "SELECT lesson_id AS id, lesson_name AS name, 'lesson' AS type FROM lesson WHERE is_deleted = 1 ORDER BY lesson_id DESC");
+$deleted_students = trashFetchAll($conn, "SELECT stu_id AS id, CONCAT(stu_name,' (',stu_email,')') AS name, 'student' AS type FROM student WHERE is_deleted = 1 ORDER BY stu_id DESC");
+$deleted_feedback = trashFetchAll($conn, "SELECT f_id AS id, CONCAT(LEFT(f_content,60),'...') AS name, 'feedback' AS type FROM feedback WHERE is_deleted = 1 ORDER BY f_id DESC");
+$deleted_orders   = trashFetchAll($conn, "SELECT co.co_id AS id, CONCAT(co.order_id,' - ',COALESCE(c.course_name,'?'),' | ',co.stu_email) AS name, 'courseorder' AS type FROM courseorder co LEFT JOIN course c ON co.course_id = c.course_id WHERE co.is_deleted = 1 ORDER BY co.co_id DESC");
+$deleted_contacts = trashFetchAll($conn, "SELECT c_id AS id, CONCAT(name,' - ',LEFT(message,40),'...') AS name, 'contact' AS type FROM contact_message WHERE is_deleted = 1 ORDER BY c_id DESC");
 
 $groups = [
     ['label' => 'Khoá học',    'icon' => 'fa-layer-group',    'color' => 'blue',    'result' => $deleted_courses],
@@ -120,6 +150,7 @@ $total = array_sum(array_map(fn($g) => $g['result'] ? $g['result']->num_rows : 0
           <input type="hidden" name="action" value="restore">
           <input type="hidden" name="type"   value="<?php echo $row['type']; ?>">
           <input type="hidden" name="id"     value="<?php echo $row['id']; ?>">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <button type="submit"
                   class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition-colors">
             <i class="fas fa-undo text-xs"></i> Khôi phục
@@ -131,6 +162,7 @@ $total = array_sum(array_map(fn($g) => $g['result'] ? $g['result']->num_rows : 0
           <input type="hidden" name="action" value="permanent">
           <input type="hidden" name="type"   value="<?php echo $row['type']; ?>">
           <input type="hidden" name="id"     value="<?php echo $row['id']; ?>">
+          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
           <button type="submit"
                   class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors">
             <i class="fas fa-times text-xs"></i> Xoá vĩnh viễn

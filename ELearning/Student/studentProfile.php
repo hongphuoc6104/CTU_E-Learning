@@ -1,73 +1,165 @@
 <?php
-if(!isset($_SESSION)){ 
-  session_start(); 
-}
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Hồ sơ của tôi');
 define('PAGE', 'profile');
-include('./stuInclude/header.php'); 
 include_once('../dbConnection.php');
 
- if(isset($_SESSION['is_login'])){
+if(isset($_SESSION['is_login'])){
   $stuEmail = $_SESSION['stuLogEmail'];
- } else {
-  echo "<script> location.href='../index.php'; </script>";
- }
-
- $sql = "SELECT * FROM student WHERE stu_email='$stuEmail'";
- $result = $conn->query($sql);
- if($result->num_rows == 1){
- $row = $result->fetch_assoc();
- $stuId = $row["stu_id"];
- $stuName = $row["stu_name"]; 
- $stuOcc = $row["stu_occ"];
- $stuImg = $row["stu_img"];
- // Chuẩn hoá path: thêm ../ để dùng được từ thư mục Student
- if(!empty($stuImg)) $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
+} else {
+  header('Location: ../index.php');
+  exit;
 }
 
- if(isset($_REQUEST['updateStuNameBtn'])){
-  if(($_REQUEST['stuName'] == "")){
-   $passmsg = 'error:Vui lòng điền đầy đủ thông tin.';
+$stuId = 0;
+$stuName = '';
+$stuOcc = '';
+$stuImg = '';
+
+$stmtStudent = $conn->prepare('SELECT stu_id, stu_name, stu_occ, stu_img FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+if($stmtStudent) {
+  $stmtStudent->bind_param('s', $stuEmail);
+  $stmtStudent->execute();
+  $result = $stmtStudent->get_result();
+  if($result && $result->num_rows === 1){
+    $row = $result->fetch_assoc();
+    $stuId = (int) $row['stu_id'];
+    $stuName = $row['stu_name'];
+    $stuOcc = $row['stu_occ'];
+    $stuImg = $row['stu_img'];
+    if(!empty($stuImg)) {
+      $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
+    }
+  }
+  $stmtStudent->close();
+}
+
+if($stuId <= 0) {
+  header('Location: ../logout.php');
+  exit;
+}
+
+include('./stuInclude/header.php');
+
+ if(isset($_POST['updateStuNameBtn'])){
+  if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+   $passmsg = 'error:Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.';
   } else {
-   $stuName = $_REQUEST["stuName"];
-   $stuOcc = $_REQUEST["stuOcc"];
-   $stu_image = $_FILES['stuImg']['name']; 
-   
-   if($stu_image != "") {
-     $stu_image_temp = $_FILES['stuImg']['tmp_name'];
-      $filename   = time() . '_' . basename($stu_image);
-      $img_disk   = __DIR__ . '/../image/stu/' . $filename;
-      $img_db     = 'image/stu/' . $filename;
-     move_uploaded_file($stu_image_temp, $img_disk);
-     $sql = "UPDATE student SET stu_name = '$stuName', stu_occ = '$stuOcc', stu_img = '$img_db' WHERE stu_email = '$stuEmail'";
+   $newStuName = trim((string) ($_POST['stuName'] ?? ''));
+   $newStuOcc = trim((string) ($_POST['stuOcc'] ?? ''));
+
+   if($newStuName === ''){
+   $passmsg = 'error:Vui lòng điền đầy đủ thông tin.';
    } else {
-     $sql = "UPDATE student SET stu_name = '$stuName', stu_occ = '$stuOcc' WHERE stu_email = '$stuEmail'";
+    $newAvatarPath = null;
+    $newAvatarDiskPath = null;
+    $uploadInfo = $_FILES['stuImg'] ?? null;
+
+   if($uploadInfo && (int) ($uploadInfo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+     if((int) $uploadInfo['error'] !== UPLOAD_ERR_OK) {
+       $passmsg = 'error:Tải ảnh đại diện thất bại. Vui lòng thử lại.';
+     } elseif((int) $uploadInfo['size'] > 2 * 1024 * 1024) {
+       $passmsg = 'error:Ảnh đại diện vượt quá 2MB.';
+     } else {
+       $tmpName = (string) $uploadInfo['tmp_name'];
+       $finfo = new finfo(FILEINFO_MIME_TYPE);
+       $mimeType = $finfo->file($tmpName);
+       $allowedTypes = [
+         'image/jpeg' => 'jpg',
+         'image/png' => 'png',
+         'image/webp' => 'webp',
+       ];
+
+       if(!isset($allowedTypes[$mimeType])) {
+         $passmsg = 'error:Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.';
+       } else {
+         $filename = bin2hex(random_bytes(16)) . '.' . $allowedTypes[$mimeType];
+         $imgDisk = __DIR__ . '/../image/stu/' . $filename;
+          if(!move_uploaded_file($tmpName, $imgDisk)) {
+            $passmsg = 'error:Không thể lưu ảnh đại diện.';
+          } else {
+            $newAvatarPath = 'image/stu/' . $filename;
+            $newAvatarDiskPath = $imgDisk;
+          }
+        }
+      }
    }
 
-   if($conn->query($sql) == TRUE){
-       $sql_refresh = "SELECT * FROM student WHERE stu_email='$stuEmail'";
-       $result_refresh = $conn->query($sql_refresh);
-       if($result_refresh->num_rows == 1){
-         $row_refresh = $result_refresh->fetch_assoc();
-         $stuName = $row_refresh["stu_name"]; 
-         $stuOcc = $row_refresh["stu_occ"];
-         $stuImg = $row_refresh["stu_img"];
-         if(!empty($stuImg)) $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
+    if(!isset($passmsg)) {
+      $stmtUpdate = null;
+      if($newAvatarPath !== null) {
+        $stmtUpdate = $conn->prepare('UPDATE student SET stu_name = ?, stu_occ = ?, stu_img = ? WHERE stu_email = ?');
+        if($stmtUpdate) {
+         $stmtUpdate->bind_param('ssss', $newStuName, $newStuOcc, $newAvatarPath, $stuEmail);
        }
-       $passmsg = 'success:Cập nhật thông tin thành công!';
-   } else {
-       $passmsg = 'error:Không thể cập nhật thông tin.';
+     } else {
+       $stmtUpdate = $conn->prepare('UPDATE student SET stu_name = ?, stu_occ = ? WHERE stu_email = ?');
+       if($stmtUpdate) {
+         $stmtUpdate->bind_param('sss', $newStuName, $newStuOcc, $stuEmail);
+       }
+     }
+
+     if($stmtUpdate && $stmtUpdate->execute()) {
+       $stmtUpdate->close();
+
+        $refreshStmt = $conn->prepare('SELECT stu_name, stu_occ, stu_img FROM student WHERE stu_email = ? LIMIT 1');
+        if($refreshStmt) {
+          $refreshStmt->bind_param('s', $stuEmail);
+          $refreshStmt->execute();
+          $result_refresh = $refreshStmt->get_result();
+          if($result_refresh && $result_refresh->num_rows === 1){
+            $row_refresh = $result_refresh->fetch_assoc();
+            $stuName = $row_refresh['stu_name'];
+            $stuOcc = $row_refresh['stu_occ'];
+            $stuImg = $row_refresh['stu_img'];
+            if(!empty($stuImg)) {
+              $stuImg = "../" . ltrim(str_replace('../', '', $stuImg), '/');
+            }
+          }
+          $refreshStmt->close();
+        }
+        $passmsg = 'success:Cập nhật thông tin thành công!';
+     } else {
+        if($stmtUpdate) {
+          $stmtUpdate->close();
+        }
+
+        if($newAvatarDiskPath !== null && is_file($newAvatarDiskPath)) {
+          @unlink($newAvatarDiskPath);
+        }
+
+        $passmsg = 'error:Không thể cập nhật thông tin.';
+     }
+    }
    }
   }
  }
 
 // Fetch owned courses
-$my_courses_sql = "SELECT c.*, co.order_date FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail' AND co.is_deleted=0 AND c.is_deleted=0 ORDER BY co.order_date DESC";
-$my_courses_result = $conn->query($my_courses_sql);
+$my_courses_result = false;
+$myCoursesStmt = $conn->prepare(
+  'SELECT c.*, co.order_date FROM courseorder co '
+  . 'JOIN course c ON co.course_id = c.course_id '
+  . "WHERE co.stu_email = ? AND co.status = 'TXN_SUCCESS' AND co.is_deleted = 0 "
+  . 'ORDER BY co.order_date DESC'
+);
+if($myCoursesStmt) {
+  $myCoursesStmt->bind_param('s', $stuEmail);
+  $myCoursesStmt->execute();
+  $my_courses_result = $myCoursesStmt->get_result();
+}
 
 // Fetch my feedback (bảng feedback không có course_id, bỏ JOIN)
-$my_feedback_sql = "SELECT * FROM feedback WHERE stu_id = '$stuId' AND is_deleted=0 ORDER BY f_id DESC";
-$my_feedback_result = $conn->query($my_feedback_sql);
+$my_feedback_result = false;
+$myFeedbackStmt = $conn->prepare('SELECT * FROM feedback WHERE stu_id = ? AND is_deleted = 0 ORDER BY f_id DESC');
+if($myFeedbackStmt) {
+  $myFeedbackStmt->bind_param('i', $stuId);
+  $myFeedbackStmt->execute();
+  $my_feedback_result = $myFeedbackStmt->get_result();
+}
 ?>
 
 <!-- ====== PROFILE PAGE ====== -->
@@ -138,6 +230,7 @@ $my_feedback_result = $conn->query($my_feedback_sql);
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data" class="space-y-6 max-w-2xl">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="grid sm:grid-cols-2 gap-6">
                     <!-- Mã học viên (readonly) -->
                     <div>
@@ -204,7 +297,7 @@ $my_feedback_result = $conn->query($my_feedback_sql);
                     $c_img = '../' . ltrim(str_replace('../', '', $c['course_img']), '/');
                 ?>
                 <div class="bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 hover:shadow-md transition-all group">
-                    <a href="../coursedetails.php?course_id=<?php echo $c['course_id']; ?>" class="block aspect-video overflow-hidden">
+                     <a href="watchcourse.php?course_id=<?php echo $c['course_id']; ?>" class="block aspect-video overflow-hidden">
                         <img src="<?php echo $c_img; ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Course image" onerror="this.onerror=null;this.src='../image/courseimg/course5.jpg'">
                     </a>
                     <div class="p-4">
@@ -243,9 +336,6 @@ $my_feedback_result = $conn->query($my_feedback_sql);
             <div class="space-y-4">
                 <?php while($fb = $my_feedback_result->fetch_assoc()): ?>
                 <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                    <?php if(!empty($fb['course_name'])): ?>
-                    <p class="text-xs font-bold text-primary uppercase tracking-wider mb-2"><?php echo htmlspecialchars($fb['course_name']); ?></p>
-                    <?php endif; ?>
                     <p class="text-slate-700 italic text-sm leading-relaxed">"<?php echo htmlspecialchars($fb['f_content']); ?>"</p>
                 </div>
                 <?php endwhile; ?>
@@ -270,12 +360,20 @@ $my_feedback_result = $conn->query($my_feedback_sql);
                 $oldPass = $_POST['oldPass'] ?? '';
                 $newPass = $_POST['newPass'] ?? '';
                 $confirmPass = $_POST['confirmPass'] ?? '';
+                $rowCheck = null;
+
+                $checkStmt = $conn->prepare('SELECT stu_pass FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+                if($checkStmt) {
+                    $checkStmt->bind_param('s', $stuEmail);
+                    $checkStmt->execute();
+                    $resCheck = $checkStmt->get_result();
+                    $rowCheck = $resCheck ? $resCheck->fetch_assoc() : null;
+                    $checkStmt->close();
+                }
                 
-                $sqlCheck = "SELECT stu_pass FROM student WHERE stu_email='$stuEmail'";
-                $resCheck = $conn->query($sqlCheck);
-                $rowCheck = $resCheck->fetch_assoc();
-                
-                if(!password_verify($oldPass, $rowCheck['stu_pass']) && $rowCheck['stu_pass'] !== $oldPass){
+                if(!csrf_verify($_POST['csrf_token'] ?? null)){
+                    $passMsgChange = 'error:Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.';
+                } elseif(!$rowCheck || !password_verify($oldPass, $rowCheck['stu_pass'])){
                     $passMsgChange = 'error:Mật khẩu cũ không đúng.';
                 } elseif($newPass !== $confirmPass){
                     $passMsgChange = 'error:Mật khẩu mới không khớp nhau.';
@@ -283,11 +381,19 @@ $my_feedback_result = $conn->query($my_feedback_sql);
                     $passMsgChange = 'error:Mật khẩu mới phải có ít nhất 6 ký tự.';
                 } else {
                     $hashedNewPass = password_hash($newPass, PASSWORD_DEFAULT);
-                    $sqlUp = "UPDATE student SET stu_pass='$hashedNewPass' WHERE stu_email='$stuEmail'";
-                    if($conn->query($sqlUp)){
+                    $updatePassStmt = $conn->prepare('UPDATE student SET stu_pass = ? WHERE stu_email = ?');
+                    if($updatePassStmt){
+                        $updatePassStmt->bind_param('ss', $hashedNewPass, $stuEmail);
+                    }
+
+                    if($updatePassStmt && $updatePassStmt->execute()){
                         $passMsgChange = 'success:Đổi mật khẩu thành công!';
                     } else {
                         $passMsgChange = 'error:Không thể đổi mật khẩu. Vui lòng thử lại.';
+                    }
+
+                    if($updatePassStmt) {
+                        $updatePassStmt->close();
                     }
                 }
                 // Switch to the password tab on reload
@@ -306,6 +412,7 @@ $my_feedback_result = $conn->query($my_feedback_sql);
             <?php endif; ?>
 
             <form method="POST" class="space-y-5 max-w-md">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Mật khẩu hiện tại</label>
                     <input type="password" name="oldPass" required
@@ -354,5 +461,14 @@ function previewAvatar(input) {
     }
 }
 </script>
+
+<?php
+if(isset($myCoursesStmt) && $myCoursesStmt) {
+    $myCoursesStmt->close();
+}
+if(isset($myFeedbackStmt) && $myFeedbackStmt) {
+    $myFeedbackStmt->close();
+}
+?>
 
 <?php include('./stuInclude/footer.php'); ?>

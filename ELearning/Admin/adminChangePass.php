@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Đổi mật khẩu');
 define('PAGE', 'changepass');
 include('./adminInclude/header.php');
@@ -17,25 +20,49 @@ if(isset($_POST['adminPassUpdatebtn'])){
     $newPass  = $_POST['newPass']  ?? '';
     $confPass = $_POST['confPass'] ?? '';
 
-    if(!$oldPass || !$newPass || !$confPass){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        $msg = ['type'=>'error','text'=>'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
+    } elseif(!$oldPass || !$newPass || !$confPass){
         $msg = ['type'=>'error','text'=>'Vui lòng điền đầy đủ tất cả các trường.'];
     } elseif($newPass !== $confPass){
         $msg = ['type'=>'error','text'=>'Mật khẩu mới và xác nhận không khớp.'];
     } elseif(strlen($newPass) < 6){
         $msg = ['type'=>'error','text'=>'Mật khẩu mới phải có ít nhất 6 ký tự.'];
     } else {
-        $r = $conn->query("SELECT admin_pass FROM admin WHERE admin_email='$adminEmail'");
-        if($r->num_rows === 0){
+        $checkStmt = $conn->prepare('SELECT admin_pass FROM admin WHERE admin_email = ? LIMIT 1');
+        if(!$checkStmt) {
+            $msg = ['type'=>'error','text'=>'Lỗi hệ thống. Vui lòng thử lại.'];
+        } else {
+            $checkStmt->bind_param('s', $adminEmail);
+            $checkStmt->execute();
+            $r = $checkStmt->get_result();
+        }
+
+        if(!isset($r) || $r->num_rows === 0){
             $msg = ['type'=>'error','text'=>'Không tìm thấy tài khoản.'];
         } else {
             $row = $r->fetch_assoc();
-            if(!password_verify($oldPass, $row['admin_pass']) && $row['admin_pass'] !== $oldPass) {
+            if(!password_verify($oldPass, $row['admin_pass'])) {
                 $msg = ['type'=>'error','text'=>'Mật khẩu cũ không đúng.'];
             } else {
                 $hashedNewPass = password_hash($newPass, PASSWORD_DEFAULT);
-                $conn->query("UPDATE admin SET admin_pass='$hashedNewPass' WHERE admin_email='$adminEmail'");
-                $msg = ['type'=>'success','text'=>'Đổi mật khẩu thành công!'];
+                $updateStmt = $conn->prepare('UPDATE admin SET admin_pass = ? WHERE admin_email = ?');
+                if($updateStmt) {
+                    $updateStmt->bind_param('ss', $hashedNewPass, $adminEmail);
+                    if($updateStmt->execute()) {
+                        $msg = ['type'=>'success','text'=>'Đổi mật khẩu thành công!'];
+                    } else {
+                        $msg = ['type'=>'error','text'=>'Không thể cập nhật mật khẩu.'];
+                    }
+                    $updateStmt->close();
+                } else {
+                    $msg = ['type'=>'error','text'=>'Không thể cập nhật mật khẩu.'];
+                }
             }
+        }
+
+        if(isset($checkStmt) && $checkStmt) {
+            $checkStmt->close();
         }
     }
 }
@@ -55,6 +82,7 @@ if(isset($_POST['adminPassUpdatebtn'])){
       <p class="text-sm text-slate-500">Tài khoản: <span class="font-semibold text-slate-800"><?php echo htmlspecialchars($adminEmail); ?></span></p>
     </div>
     <form method="POST" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
       <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">Mật khẩu hiện tại</label>
         <input type="password" name="oldPass" required

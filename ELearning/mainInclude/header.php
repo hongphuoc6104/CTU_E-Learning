@@ -1,53 +1,27 @@
-<?php if(!isset($_SESSION)){ session_start(); } ?>
+<?php
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+$csrfToken = csrf_token();
+?>
 <!DOCTYPE html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>" />
     
-     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-
     <!-- Font Awesome CSS -->
     <link rel="stylesheet" type="text/css" href="css/all.min.css">
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
 
-    <!-- Student Testimonial Owl Slider CSS -->
-    <link rel="stylesheet" type="text/css" href="css/owl.min.css">
-    <link rel="stylesheet" type="text/css" href="css/owl.theme.min.css">
-    <link rel="stylesheet" type="text/css" href="css/testyslider.css">
-
-    <!-- Tailwind CSS (AI Generated) -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Compiled Tailwind CSS -->
+    <link rel="stylesheet" type="text/css" href="css/tailwind.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-    
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#003366",
-                        "accent-green": "#10b981",
-                        "background-light": "#f5f7f8",
-                        "background-dark": "#0f1923",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
+
     <style>
         .glass-header {
             background: rgba(255, 255, 255, 0.8);
@@ -59,7 +33,6 @@
             background-image: radial-gradient(#00336610 1px, transparent 1px);
             background-size: 20px 20px;
         }
-        /* Override Bootstrap for Tailwind compatibility */
         a:hover { text-decoration: none; }
     </style>
 
@@ -89,14 +62,19 @@
                 <?php 
                     if (isset($_SESSION['is_login'])){
                         $stuEmail = $_SESSION['stuLogEmail'];
-                        $sqlAvatar = "SELECT stu_img, stu_name FROM student WHERE stu_email = '$stuEmail'";
-                        $resAvatar = $conn->query($sqlAvatar);
                         $stuImg = "";
                         $stuName = "Học viên";
-                        if ($resAvatar && $resAvatar->num_rows > 0) {
-                            $rowAvatar = $resAvatar->fetch_assoc();
-                            $stuImg = $rowAvatar['stu_img'];
-                            $stuName = $rowAvatar['stu_name'];
+                        $stmtAvatar = $conn->prepare('SELECT stu_img, stu_name FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+                        if ($stmtAvatar) {
+                            $stmtAvatar->bind_param('s', $stuEmail);
+                            $stmtAvatar->execute();
+                            $resAvatar = $stmtAvatar->get_result();
+                            if ($resAvatar && $resAvatar->num_rows > 0) {
+                                $rowAvatar = $resAvatar->fetch_assoc();
+                                $stuImg = $rowAvatar['stu_img'];
+                                $stuName = $rowAvatar['stu_name'];
+                            }
+                            $stmtAvatar->close();
                         }
                         if(empty($stuImg)){
                             $stuImg = 'image/stu/default_avatar.png';

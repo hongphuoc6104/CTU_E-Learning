@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Thêm bài học');
 define('PAGE', 'lessons');
 include('./adminInclude/header.php');
@@ -13,49 +16,81 @@ $prefill_course = (int)($_GET['course_id'] ?? 0);
 $msg = '';
 
 if(isset($_POST['addLessonBtn'])){
-    $lesson_name = trim($_POST['lesson_name'] ?? '');
-    $lesson_desc = trim($_POST['lesson_desc'] ?? '');
-    $course_id   = (int)($_POST['course_id'] ?? 0);
-    $mode        = $_POST['video_mode'] ?? 'link'; // 'link' or 'upload'
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        $msg = ['type'=>'error', 'text'=>'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
+    } else {
+        $lesson_name = trim($_POST['lesson_name'] ?? '');
+        $lesson_desc = trim($_POST['lesson_desc'] ?? '');
+        $course_id   = (int)($_POST['course_id'] ?? 0);
+        $mode        = $_POST['video_mode'] ?? 'link'; // 'link' or 'upload'
 
-    $lesson_link = '';
+        $lesson_link = '';
 
-    if($mode === 'upload' && isset($_FILES['lesson_video']) && $_FILES['lesson_video']['error'] === UPLOAD_ERR_OK) {
-        // Handle file upload
-        $allowed_vid = ['mp4', 'webm', 'ogg', 'mov'];
-        $vid_ext = strtolower(pathinfo($_FILES['lesson_video']['name'], PATHINFO_EXTENSION));
-        if (!in_array($vid_ext, $allowed_vid)) {
-            $msg = ['type'=>'error', 'text'=>'Định dạng video không hỗ trợ. Chỉ chấp nhận mp4, webm, ogg, mov.'];
-        } elseif ($_FILES['lesson_video']['size'] > 500 * 1024 * 1024) { // 500MB
-            $msg = ['type'=>'error', 'text'=>'Dung lượng video quá lớn (tối đa 500MB).'];
-        } else {
-            $filename    = time() . '_' . basename($_FILES['lesson_video']['name']);
-            $upload_path = __DIR__ . '/../lessonvid/' . $filename;
-            if(move_uploaded_file($_FILES['lesson_video']['tmp_name'], $upload_path)) {
-                $lesson_link = '../lessonvid/' . $filename;
+        $uploadedVideoDiskPath = null;
+        if($mode === 'upload' && isset($_FILES['lesson_video']) && $_FILES['lesson_video']['error'] === UPLOAD_ERR_OK) {
+            // Handle file upload
+            $allowed_vid = ['mp4', 'webm', 'ogg', 'mov'];
+            $vid_ext = strtolower(pathinfo($_FILES['lesson_video']['name'], PATHINFO_EXTENSION));
+            if (!in_array($vid_ext, $allowed_vid, true)) {
+                $msg = ['type'=>'error', 'text'=>'Định dạng video không hỗ trợ. Chỉ chấp nhận mp4, webm, ogg, mov.'];
+            } elseif ($_FILES['lesson_video']['size'] > 500 * 1024 * 1024) { // 500MB
+                $msg = ['type'=>'error', 'text'=>'Dung lượng video quá lớn (tối đa 500MB).'];
             } else {
-                $msg = ['type'=>'error', 'text'=>'Không thể lưu file video. Kiểm tra quyền ghi thư mục lessonvid/.'];
+                $filename    = time() . '_' . basename($_FILES['lesson_video']['name']);
+                $upload_path = __DIR__ . '/../lessonvid/' . $filename;
+                if(move_uploaded_file($_FILES['lesson_video']['tmp_name'], $upload_path)) {
+                    $lesson_link = '../lessonvid/' . $filename;
+                    $uploadedVideoDiskPath = $upload_path;
+                } else {
+                    $msg = ['type'=>'error', 'text'=>'Không thể lưu file video. Kiểm tra quyền ghi thư mục lessonvid/.'];
+                }
             }
+        } elseif ($mode === 'link') {
+            $lesson_link = trim($_POST['lesson_link'] ?? '');
         }
-    } elseif ($mode === 'link') {
-        $lesson_link = trim($_POST['lesson_link'] ?? '');
-    }
 
-    if(!$msg) {
-        if(!$lesson_name || !$lesson_link || !$course_id){
-            $msg = ['type'=>'error', 'text'=>'Vui lòng điền đầy đủ: tên bài học, video và khoá học.'];
-        } else {
-            $cr = $conn->query("SELECT course_name FROM course WHERE course_id=$course_id");
-            $course_name = $cr->num_rows ? $cr->fetch_assoc()['course_name'] : '';
-
-            $stmt = $conn->prepare("INSERT INTO lesson (lesson_name, lesson_desc, lesson_link, course_id, course_name) VALUES (?,?,?,?,?)");
-            $stmt->bind_param('sssis', $lesson_name, $lesson_desc, $lesson_link, $course_id, $course_name);
-            if($stmt->execute()){
-                $msg = ['type'=>'success', 'text'=>'Thêm bài học thành công!'];
+        if(!$msg) {
+            if(!$lesson_name || !$lesson_link || !$course_id){
+                $msg = ['type'=>'error', 'text'=>'Vui lòng điền đầy đủ: tên bài học, video và khoá học.'];
             } else {
-                $msg = ['type'=>'error', 'text'=>'Lỗi khi thêm bài học.'];
+                $course_name = '';
+                $courseStmt = $conn->prepare('SELECT course_name FROM course WHERE course_id = ? AND is_deleted = 0 LIMIT 1');
+                if($courseStmt) {
+                    $courseStmt->bind_param('i', $course_id);
+                    $courseStmt->execute();
+                    $cr = $courseStmt->get_result();
+                    if($cr && $cr->num_rows > 0) {
+                        $course_name = (string) $cr->fetch_assoc()['course_name'];
+                    }
+                    $courseStmt->close();
+                }
+
+                if($course_name === '') {
+                    if($uploadedVideoDiskPath !== null && is_file($uploadedVideoDiskPath)) {
+                        @unlink($uploadedVideoDiskPath);
+                    }
+                    $msg = ['type'=>'error', 'text'=>'Khoá học không hợp lệ hoặc đã bị xoá.'];
+                } else {
+                    $stmt = $conn->prepare('INSERT INTO lesson (lesson_name, lesson_desc, lesson_link, course_id, course_name, is_deleted) VALUES (?, ?, ?, ?, ?, 0)');
+                    if($stmt) {
+                        $stmt->bind_param('sssis', $lesson_name, $lesson_desc, $lesson_link, $course_id, $course_name);
+                        if($stmt->execute()){
+                            $msg = ['type'=>'success', 'text'=>'Thêm bài học thành công!'];
+                        } else {
+                            if($uploadedVideoDiskPath !== null && is_file($uploadedVideoDiskPath)) {
+                                @unlink($uploadedVideoDiskPath);
+                            }
+                            $msg = ['type'=>'error', 'text'=>'Lỗi khi thêm bài học.'];
+                        }
+                        $stmt->close();
+                    } else {
+                        if($uploadedVideoDiskPath !== null && is_file($uploadedVideoDiskPath)) {
+                            @unlink($uploadedVideoDiskPath);
+                        }
+                        $msg = ['type'=>'error', 'text'=>'Lỗi khi thêm bài học.'];
+                    }
+                }
             }
-            $stmt->close();
         }
     }
 }
@@ -86,6 +121,7 @@ $courses = $conn->query("SELECT course_id, course_name FROM course WHERE is_dele
 
   <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
     <form method="POST" enctype="multipart/form-data" class="space-y-6">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
       <input type="hidden" name="video_mode" id="videoModeInput" value="link">
 
       <!-- Khoá học -->

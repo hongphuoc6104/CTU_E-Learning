@@ -1,0 +1,14 @@
+{
+  "name": "ischool-elearning",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tailwind build pipeline for CTU E-Learning",
+  "scripts": {
+    "tailwind:build": "tailwindcss -i ./ELearning/css/tailwind.input.css -o ./ELearning/css/tailwind.css --minify",
+    "tailwind:watch": "tailwindcss -i ./ELearning/css/tailwind.input.css -o ./ELearning/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.5",
+    "tailwindcss": "^4.1.5"
+  }
+}

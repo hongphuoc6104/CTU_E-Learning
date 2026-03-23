@@ -1,95 +1,27 @@
 <?php
-  define('TITLE', 'Trạng thái thanh toán');
-  define('PAGE', 'paymentstatus');
-  include('./adminInclude/header.php'); 
-  header("Pragma: no-cache");
-  header("Cache-Control: no-cache");
-  header("Expires: 0");
-  include('../dbConnection.php');
- 
-  // following files need to be included
-  require_once("../PaytmKit/lib/config_paytm.php");
-  require_once("../PaytmKit/lib/encdec_paytm.php");
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
 
-  
-	$ORDER_ID = "";
-	$requestParamList = array();
-	$responseParamList = array();
+define('TITLE', 'Trạng thái thanh toán');
+define('PAGE', 'paymentstatus');
+include('./adminInclude/header.php');
+?>
 
-	if (isset($_POST["ORDER_ID"]) && $_POST["ORDER_ID"] != "") {
-
-		// In Test Page, we are taking parameters from POST request. In actual implementation these can be collected from session or DB. 
-		$ORDER_ID = $_POST["ORDER_ID"];
-
-		// Create an array having all required parameters for status query.
-		$requestParamList = array("MID" => PAYTM_MERCHANT_MID , "ORDERID" => $ORDER_ID);  
-		
-		$StatusCheckSum = getChecksumFromArray($requestParamList,PAYTM_MERCHANT_KEY);
-		
-		$requestParamList['CHECKSUMHASH'] = $StatusCheckSum;
-
-		// Call the PG's getTxnStatusNew() function for verifying the transaction status.
-		$responseParamList = getTxnStatusNew($requestParamList);
-	} 
-
-?>  
-   <div class="container">
-     <h2 class="text-center my-4">Trạng thái thanh toán </h2>
-     <form method="post" action="">
-     <div class="form-group row">
-        <label class="offset-sm-3 col-form-label">Mã đơn hàng: </label>
-        <div>
-          <input class="form-control mx-3" id="ORDER_ID" tabindex="1" maxlength="20" size="20" name="ORDER_ID" autocomplete="off" value="<?php echo $ORDER_ID ?>">
-        </div>
-        <div>
-          <input class="btn btn-primary mx-4" value="Xem" type="submit">
-        </div>
-      </div>
-      
-     </form>
+<div class="max-w-3xl">
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+    <div class="w-14 h-14 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-5">
+      <i class="fas fa-exclamation-triangle text-xl"></i>
     </div>
-    <div class="container">
-    <?php
-      if (isset($responseParamList) && count($responseParamList)>0 )
-      { 
-        $sql = "SELECT order_id FROM courseorder";
-        $result = $conn->query($sql);
-        while($row = $result->fetch_assoc()){
-          if($responseParamList["ORDERID"] == $row["order_id"]){     
-      ?>
-            <div class="row justify-content-center">
-              <div class="col-auto">
-                <h2 class="text-center">Biên lai thanh toán</h2>
-                <table class="table table-bordered">
-                 <tbody>
-                  <?php
-                    foreach($responseParamList as $paramName => $paramValue) {
-                  ?>
-                  <tr >
-                    <td><label><?php echo $paramName?></label></td>
-                    <td><?php echo $paramValue?></td>
-                  </tr>
-                  <?php
-                    }
-                  ?>
-                  <tr>
-                    <td></td>
-                    <td><button class="btn btn-primary" onclick="javascript:window.print();">In biên lai</button></td>
-                  </tr>
-                  </tbody>
-                </table>
-          <?php
-          } 
-        } 
-    } 
-      ?>
-      
-      </div>
-      </div>
+    <h2 class="text-xl font-black text-slate-900 mb-3">Màn hình Paytm cũ đã tắt</h2>
+    <p class="text-slate-600 leading-relaxed mb-5">
+      Khu vực này từng dùng để tra cứu trạng thái qua Paytm nhưng không còn khớp với luồng checkout hiện tại.
+      Để tránh sai lệch dữ liệu, endpoint Paytm legacy đã được vô hiệu hoá.
+    </p>
+    <div class="text-sm text-slate-500 bg-slate-50 border border-slate-100 rounded-xl p-4">
+      Theo dõi doanh thu và giao dịch tại trang <a href="sellReport.php" class="text-primary font-semibold hover:underline">Báo cáo doanh thu</a> hoặc
+      <a href="adminDashboard.php" class="text-primary font-semibold hover:underline">Bảng điều khiển</a>.
+    </div>
+  </div>
+</div>
 
-    </div> 
-    </div>  <!-- div Row close from header -->
-</div>  <!-- div Conatiner-fluid close from header -->
-<?php
-include('./adminInclude/footer.php'); 
-?> 
+<?php include('./adminInclude/footer.php'); ?>

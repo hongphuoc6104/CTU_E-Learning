@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Khoá học');
 define('PAGE', 'courses');
 include('./adminInclude/header.php');
@@ -11,19 +14,49 @@ if(!isset($_SESSION['is_admin_login'])){
 
 // Soft-delete course
 if(isset($_POST['delete_course'])){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='courses.php';</script>";
+        exit;
+    }
+
     $cid = (int)$_POST['cid'];
-    $conn->query("UPDATE course SET is_deleted=1 WHERE course_id=$cid");
+    $stmtDelete = $conn->prepare('UPDATE course SET is_deleted = 1 WHERE course_id = ?');
+    if($stmtDelete) {
+        $stmtDelete->bind_param('i', $cid);
+        $stmtDelete->execute();
+        $stmtDelete->close();
+    }
     echo "<script>location.href='courses.php';</script>"; exit;
 }
 
 // Search
 $search = trim($_GET['q'] ?? '');
-$sql = "SELECT c.*, (SELECT COUNT(*) FROM lesson l WHERE l.course_id=c.course_id) as lesson_count,
-               (SELECT COUNT(*) FROM courseorder o WHERE o.course_id=c.course_id AND o.is_deleted=0) as order_count
-        FROM course c WHERE c.is_deleted = 0";
-if($search) $sql .= " AND (c.course_name LIKE '%".addslashes($search)."%' OR c.course_author LIKE '%".addslashes($search)."%')";
-$sql .= " ORDER BY c.course_id DESC";
-$result = $conn->query($sql);
+$result = false;
+$coursesStmt = null;
+
+if($search !== '') {
+    $coursesStmt = $conn->prepare(
+        'SELECT c.*, (SELECT COUNT(*) FROM lesson l WHERE l.course_id = c.course_id) as lesson_count, '
+        . '(SELECT COUNT(*) FROM courseorder o WHERE o.course_id = c.course_id AND o.is_deleted = 0) as order_count '
+        . 'FROM course c WHERE c.is_deleted = 0 AND (c.course_name LIKE ? OR c.course_author LIKE ?) '
+        . 'ORDER BY c.course_id DESC'
+    );
+    if($coursesStmt) {
+        $searchLike = '%' . $search . '%';
+        $coursesStmt->bind_param('ss', $searchLike, $searchLike);
+    }
+} else {
+    $coursesStmt = $conn->prepare(
+        'SELECT c.*, (SELECT COUNT(*) FROM lesson l WHERE l.course_id = c.course_id) as lesson_count, '
+        . '(SELECT COUNT(*) FROM courseorder o WHERE o.course_id = c.course_id AND o.is_deleted = 0) as order_count '
+        . 'FROM course c WHERE c.is_deleted = 0 ORDER BY c.course_id DESC'
+    );
+}
+
+if($coursesStmt) {
+    $coursesStmt->execute();
+    $result = $coursesStmt->get_result();
+}
 ?>
 
 <!-- Toolbar -->
@@ -61,14 +94,14 @@ $result = $conn->query($sql);
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
-      <?php if($result->num_rows > 0): while($row = $result->fetch_assoc()):
+      <?php if($result && $result->num_rows > 0): while($row = $result->fetch_assoc()):
         $img = $row['course_img'];
         // normalize path
         $img = ltrim(str_replace('../', '', $img), '/');
       ?>
         <tr class="hover:bg-slate-50 transition-colors">
           <td class="px-6 py-3">
-            <img src="../<?php echo $img; ?>" onerror="this.src='../image/courseimg/default.jpg'"
+            <img src="../<?php echo $img; ?>" onerror="this.src='../image/courseimg/Banner1.jpeg'"
                  class="w-16 h-10 object-cover rounded-lg border border-slate-100">
           </td>
           <td class="px-6 py-3 font-semibold text-slate-800 max-w-xs">
@@ -90,6 +123,7 @@ $result = $conn->query($sql);
               </a>
               <form method="POST" onsubmit="return confirm('Xoá khoá học này?')">
                 <input type="hidden" name="cid" value="<?php echo $row['course_id']; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <button type="submit" name="delete_course"
                         class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition" title="Xoá">
                   <i class="fas fa-trash text-xs"></i>
@@ -105,5 +139,7 @@ $result = $conn->query($sql);
     </table>
   </div>
 </div>
+
+<?php if($coursesStmt) { $coursesStmt->close(); } ?>
 
 <?php include('./adminInclude/footer.php'); ?>

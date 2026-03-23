@@ -1,7 +1,7 @@
 <?php
-if(!isset($_SESSION)){ 
-  session_start(); 
-}
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+
 define('TITLE', 'Giỏ hàng');
 define('PAGE', 'myCart');
 include('./stuInclude/header.php'); 
@@ -23,14 +23,21 @@ $stuEmail = $_SESSION['stuLogEmail'];
     </div>
 
     <?php 
-    $sql = "SELECT c.cart_id, course.course_id, course.course_name, course.course_price, course.course_original_price, course.course_img 
-            FROM cart c 
-            JOIN course ON c.course_id = course.course_id 
-            WHERE c.stu_email = '$stuEmail' AND c.is_deleted=0 AND course.is_deleted=0";
-    $result = $conn->query($sql);
+    $stmtCart = $conn->prepare(
+        'SELECT c.cart_id, course.course_id, course.course_name, course.course_price, course.course_original_price, course.course_img '
+        . 'FROM cart c '
+        . 'JOIN course ON c.course_id = course.course_id '
+        . 'WHERE c.stu_email = ? AND c.is_deleted = 0 AND course.is_deleted = 0'
+    );
+    $result = false;
+    if($stmtCart) {
+        $stmtCart->bind_param('s', $stuEmail);
+        $stmtCart->execute();
+        $result = $stmtCart->get_result();
+    }
     $total = 0;
     
-    if($result->num_rows > 0): ?>
+    if($result && $result->num_rows > 0): ?>
     
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <!-- Cart items -->
@@ -79,7 +86,6 @@ $stuEmail = $_SESSION['stuLogEmail'];
                         <i class="fas fa-plus text-xs"></i> Thêm khóa học
                     </a>
                     <form action="../checkout.php" method="post">
-                        <input type="hidden" name="id" value="<?php echo $total; ?>">
                         <input type="hidden" name="checkout_type" value="cart">
                         <button type="submit" 
                                 class="px-8 py-3.5 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
@@ -104,23 +110,42 @@ $stuEmail = $_SESSION['stuLogEmail'];
         </a>
     </div>
     <?php endif; ?>
+    <?php if($stmtCart) { $stmtCart->close(); } ?>
 </div>
 
 <script>
-function removeFromCart(cartId) {
-    if(confirm('Bạn có chắc muốn xóa khóa học này khỏi giỏ hàng?')) {
-        $.ajax({
-            url: '../cart_api.php',
+async function removeFromCart(cartId) {
+    if (!confirm('Bạn có chắc muốn xóa khóa học này khỏi giỏ hàng?')) {
+        return;
+    }
+
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+    const body = new URLSearchParams({
+        action: 'remove',
+        cart_id: String(cartId),
+        csrf_token: csrfToken
+    });
+
+    try {
+        const response = await fetch('../cart_api.php', {
             method: 'POST',
-            data: { action: 'remove', cart_id: cartId },
-            success: function(resp) {
-                if(resp.status == 'success') {
-                    location.reload();
-                } else {
-                    alert(resp.msg);
-                }
-            }
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body.toString()
         });
+
+        const payload = await response.json();
+        if (payload.status === 'success') {
+            location.reload();
+            return;
+        }
+
+        alert(payload.msg || 'Không thể xoá khoá học khỏi giỏ hàng.');
+    } catch (_error) {
+        alert('Không thể kết nối máy chủ. Vui lòng thử lại.');
     }
 }
 </script>

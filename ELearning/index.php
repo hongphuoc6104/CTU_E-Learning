@@ -100,21 +100,28 @@
 <?php
 $sql = "SELECT * FROM course WHERE is_deleted=0 LIMIT 6";
 $result = $conn->query($sql);
-if($result->num_rows > 0){ 
+if($result && $result->num_rows > 0){ 
   while($row = $result->fetch_assoc()){
     $course_id = $row['course_id'];
     $img_path = ltrim(str_replace('../', '', $row['course_img']), '/');
     $price = number_format($row['course_price']);
     $original_price = number_format($row['course_original_price']);
+    $courseNameSafe = htmlspecialchars($row['course_name'], ENT_QUOTES, 'UTF-8');
+    $courseDescSafe = htmlspecialchars($row['course_desc'], ENT_QUOTES, 'UTF-8');
 
     // Check if already purchased
     $isPurchased = false;
     if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
         $stuEmail = $_SESSION['stuLogEmail'];
-        $checkSql = "SELECT * FROM courseorder WHERE stu_email = '$stuEmail' AND course_id = '$course_id' AND is_deleted=0";
-        $checkRes = $conn->query($checkSql);
-        if($checkRes && $checkRes->num_rows > 0){
-            $isPurchased = true;
+        $checkStmt = $conn->prepare("SELECT 1 FROM courseorder WHERE stu_email = ? AND course_id = ? AND status = 'TXN_SUCCESS' AND is_deleted = 0 LIMIT 1");
+        if($checkStmt) {
+            $checkStmt->bind_param('si', $stuEmail, $course_id);
+            $checkStmt->execute();
+            $checkRes = $checkStmt->get_result();
+            if($checkRes && $checkRes->num_rows > 0){
+                $isPurchased = true;
+            }
+            $checkStmt->close();
         }
     }
 
@@ -136,8 +143,8 @@ if($result->num_rows > 0){
             }
             echo '
             <div class="p-6 flex flex-col flex-grow">
-                <h3 class="text-lg font-bold text-slate-900 mb-2 line-clamp-2">'.$row['course_name'].'</h3>
-                <p class="text-sm text-slate-600 mb-6 line-clamp-2 leading-relaxed flex-grow">'.$row['course_desc'].'</p>
+                <h3 class="text-lg font-bold text-slate-900 mb-2 line-clamp-2">'.$courseNameSafe.'</h3>
+                <p class="text-sm text-slate-600 mb-6 line-clamp-2 leading-relaxed flex-grow">'.$courseDescSafe.'</p>
                 <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
                     <div>
                         <p class="text-xs text-slate-400 line-through m-0">'.$original_price.' đ</p>
@@ -159,6 +166,8 @@ if($result->num_rows > 0){
         </div>
     ';
   }
+} else {
+  echo '<div class="col-span-full text-center py-16"><p class="text-slate-500">Hiện chưa có khóa học nổi bật.</p></div>';
 }
 ?>
 </div>
@@ -179,7 +188,7 @@ if($result->num_rows > 0){
 <?php 
   $sql = "SELECT s.stu_name, s.stu_occ, s.stu_img, f.f_content FROM student AS s JOIN feedback AS f ON s.stu_id = f.stu_id WHERE f.is_deleted=0 AND s.is_deleted=0 LIMIT 6";
   $result = $conn->query($sql);
-  if($result->num_rows > 0) {
+  if($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()){
       $n_img = str_replace('../','',$row['stu_img']);
       if(empty($n_img) || !file_exists($n_img)) { $n_img = 'image/stu/student.png'; } // Fallback
@@ -191,15 +200,19 @@ if($result->num_rows > 0){
         <div class="pt-6">
             <i class="fas fa-quote-right text-4xl text-slate-200 absolute top-6 right-6"></i>
             <p class="text-slate-600 italic leading-relaxed relative z-10 text-[15px]">
-                "<?php echo $row['f_content'];?>"
+                "<?php echo htmlspecialchars($row['f_content'], ENT_QUOTES, 'UTF-8');?>"
             </p>
             <div class="mt-8 pt-6 border-t border-slate-200 border-dashed">
-                <p class="font-bold text-slate-900 text-lg m-0"><?php echo $row['stu_name']; ?></p>
-                <p class="text-sm text-primary font-semibold m-0 mt-1"><?php echo $row['stu_occ']; ?></p>
+                <p class="font-bold text-slate-900 text-lg m-0"><?php echo htmlspecialchars($row['stu_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+                <p class="text-sm text-primary font-semibold m-0 mt-1"><?php echo htmlspecialchars($row['stu_occ'], ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
         </div>
     </div>
-<?php }} ?>
+<?php }} else { ?>
+    <div class="md:col-span-3 text-center py-12">
+        <p class="text-slate-500">Chưa có góp ý nào để hiển thị.</p>
+    </div>
+<?php } ?>
 </div>
 </div>
 </section>

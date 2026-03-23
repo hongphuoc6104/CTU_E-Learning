@@ -1,5 +1,8 @@
 <?php
-if(!isset($_SESSION)) session_start();
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Học viên');
 define('PAGE', 'students');
 include('./adminInclude/header.php');
@@ -11,18 +14,67 @@ if(!isset($_SESSION['is_admin_login'])){
 
 // Delete student
 if(isset($_POST['delete_stu'])){
+    if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+        echo "<script>alert('Phiên gửi biểu mẫu đã hết hạn.'); location.href='students.php';</script>";
+        exit;
+    }
+
     $sid = (int)$_POST['sid'];
-    $conn->query("UPDATE cart SET is_deleted=1 WHERE stu_email=(SELECT stu_email FROM student WHERE stu_id=$sid)");
-    $conn->query("UPDATE student SET is_deleted=1 WHERE stu_id=$sid");
+    $stuEmailDelete = '';
+    $emailStmt = $conn->prepare('SELECT stu_email FROM student WHERE stu_id = ? LIMIT 1');
+    if($emailStmt) {
+        $emailStmt->bind_param('i', $sid);
+        $emailStmt->execute();
+        $emailResult = $emailStmt->get_result();
+        if($emailResult && $emailResult->num_rows === 1) {
+            $stuEmailDelete = (string) $emailResult->fetch_assoc()['stu_email'];
+        }
+        $emailStmt->close();
+    }
+
+    if($stuEmailDelete !== '') {
+        $cartStmt = $conn->prepare('UPDATE cart SET is_deleted = 1 WHERE stu_email = ?');
+        if($cartStmt) {
+            $cartStmt->bind_param('s', $stuEmailDelete);
+            $cartStmt->execute();
+            $cartStmt->close();
+        }
+    }
+
+    $stuStmt = $conn->prepare('UPDATE student SET is_deleted = 1 WHERE stu_id = ?');
+    if($stuStmt) {
+        $stuStmt->bind_param('i', $sid);
+        $stuStmt->execute();
+        $stuStmt->close();
+    }
     echo "<script>location.href='students.php';</script>"; exit;
 }
 
 $search = trim($_GET['q'] ?? '');
-$sql = "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email=s.stu_email AND o.is_deleted=0) AS course_count
-        FROM student s WHERE s.is_deleted = 0";
-if($search) $sql .= " AND (s.stu_name LIKE '%".addslashes($search)."%' OR s.stu_email LIKE '%".addslashes($search)."%')";
-$sql .= " ORDER BY s.stu_id DESC";
-$result = $conn->query($sql);
+$result = false;
+$studentsStmt = null;
+
+if($search !== '') {
+    $studentsStmt = $conn->prepare(
+        "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email = s.stu_email AND o.status = 'TXN_SUCCESS' AND o.is_deleted = 0) AS course_count "
+        . 'FROM student s WHERE s.is_deleted = 0 AND (s.stu_name LIKE ? OR s.stu_email LIKE ?) '
+        . 'ORDER BY s.stu_id DESC'
+    );
+    if($studentsStmt) {
+        $searchLike = '%' . $search . '%';
+        $studentsStmt->bind_param('ss', $searchLike, $searchLike);
+    }
+} else {
+    $studentsStmt = $conn->prepare(
+        "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email = s.stu_email AND o.status = 'TXN_SUCCESS' AND o.is_deleted = 0) AS course_count "
+        . 'FROM student s WHERE s.is_deleted = 0 ORDER BY s.stu_id DESC'
+    );
+}
+
+if($studentsStmt) {
+    $studentsStmt->execute();
+    $result = $studentsStmt->get_result();
+}
 ?>
 
 <!-- Toolbar -->
@@ -49,11 +101,12 @@ $result = $conn->query($sql);
           <th class="px-6 py-3 text-left">Email</th>
           <th class="px-6 py-3 text-left">Nghề nghiệp</th>
           <th class="px-6 py-3 text-center">Khoá đã mua</th>
+          <th class="px-6 py-3 text-center">Sửa</th>
           <th class="px-6 py-3 text-center">Xoá</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
-      <?php if($result->num_rows > 0): while($row = $result->fetch_assoc()):
+      <?php if($result && $result->num_rows > 0): while($row = $result->fetch_assoc()):
         $img = ltrim(str_replace('../','', $row['stu_img'] ?? ''), '/');
       ?>
         <tr class="hover:bg-slate-50 transition-colors">
@@ -71,8 +124,16 @@ $result = $conn->query($sql);
             <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold"><?php echo $row['course_count']; ?></span>
           </td>
           <td class="px-6 py-3 text-center">
+            <a href="editstudent.php?view=1&id=<?php echo $row['stu_id']; ?>"
+               class="mx-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 transition hover:bg-blue-100"
+               title="Sửa học viên">
+              <i class="fas fa-pen text-xs"></i>
+            </a>
+          </td>
+          <td class="px-6 py-3 text-center">
             <form method="POST" onsubmit="return confirm('Xoá học viên <?php echo addslashes(htmlspecialchars($row['stu_name'])); ?>?')">
               <input type="hidden" name="sid" value="<?php echo $row['stu_id']; ?>">
+              <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
               <button type="submit" name="delete_stu"
                       class="w-8 h-8 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-100 transition mx-auto">
                 <i class="fas fa-trash text-xs"></i>
@@ -81,11 +142,13 @@ $result = $conn->query($sql);
           </td>
         </tr>
       <?php endwhile; else: ?>
-        <tr><td colspan="5" class="px-6 py-12 text-center text-slate-400">Chưa có học viên nào.</td></tr>
+        <tr><td colspan="6" class="px-6 py-12 text-center text-slate-400">Chưa có học viên nào.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
   </div>
 </div>
+
+<?php if($studentsStmt) { $studentsStmt->close(); } ?>
 
 <?php include('./adminInclude/footer.php'); ?>

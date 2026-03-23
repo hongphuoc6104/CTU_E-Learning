@@ -1,7 +1,8 @@
 <?php
-if(!isset($_SESSION)){ 
-  session_start(); 
-}
+require_once(__DIR__ . '/../session_bootstrap.php');
+secure_session_start();
+require_once(__DIR__ . '/../csrf.php');
+
 define('TITLE', 'Đánh giá của tôi');
 define('PAGE', 'feedback');
 include('./stuInclude/header.php'); 
@@ -13,30 +14,48 @@ include_once('../dbConnection.php');
   echo "<script> location.href='../index.php'; </script>";
  }
 
- $sql = "SELECT * FROM student WHERE stu_email='$stuEmail'";
- $result = $conn->query($sql);
- if($result->num_rows == 1){
- $row = $result->fetch_assoc();
- $stuId = $row["stu_id"];
+$stuId = 0;
+$stuStmt = $conn->prepare('SELECT stu_id FROM student WHERE stu_email = ? AND is_deleted = 0 LIMIT 1');
+if($stuStmt) {
+  $stuStmt->bind_param('s', $stuEmail);
+  $stuStmt->execute();
+  $stuResult = $stuStmt->get_result();
+  if($stuResult && $stuResult->num_rows === 1) {
+    $row = $stuResult->fetch_assoc();
+    $stuId = (int) $row['stu_id'];
+  }
+  $stuStmt->close();
 }
 
-// Lấy danh sách khóa học đã mua để có thể gắn đánh giá theo khóa học
-$courses_sql = "SELECT c.course_id, c.course_name FROM courseorder co JOIN course c ON co.course_id = c.course_id WHERE co.stu_email='$stuEmail' AND co.is_deleted=0 AND c.is_deleted=0";
-$courses_result = $conn->query($courses_sql);
-
 $passmsg = '';
-if(isset($_REQUEST['submitFeedbackBtn'])){
-  if(($_REQUEST['f_content'] == "")){
+if(isset($_POST['submitFeedbackBtn'])){
+  if(!csrf_verify($_POST['csrf_token'] ?? null)) {
+   $passmsg = 'error:Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.';
+  } elseif($stuId <= 0) {
+   $passmsg = 'error:Không tìm thấy thông tin học viên.';
+  } elseif(trim((string) ($_POST['f_content'] ?? '')) === ''){
    $passmsg = 'error:Vui lòng nhập nội dung đánh giá.';
   } else {
-   $fcontent = htmlspecialchars($_REQUEST["f_content"]);
-   $sql = "INSERT INTO feedback (f_content, stu_id) VALUES ('$fcontent', '$stuId')";
-   
-   if($conn->query($sql) == TRUE){
-    $passmsg = 'success:Cảm ơn bạn đã chia sẻ đánh giá!';
+   $fcontent = trim((string) $_POST['f_content']);
+   if(strlen($fcontent) < 10) {
+    $passmsg = 'error:Nội dung đánh giá cần ít nhất 10 ký tự.';
+   } elseif(strlen($fcontent) > 1000) {
+    $passmsg = 'error:Nội dung đánh giá tối đa 1000 ký tự.';
    } else {
-    $passmsg = 'error:Không thể gửi đánh giá. Vui lòng thử lại.';
+   $insertStmt = $conn->prepare('INSERT INTO feedback (f_content, stu_id) VALUES (?, ?)');
+
+    if($insertStmt) {
+      $insertStmt->bind_param('si', $fcontent, $stuId);
+      if($insertStmt->execute()){
+        $passmsg = 'success:Cảm ơn bạn đã chia sẻ đánh giá!';
+      } else {
+        $passmsg = 'error:Không thể gửi đánh giá. Vui lòng thử lại.';
+      }
+      $insertStmt->close();
+    } else {
+      $passmsg = 'error:Không thể gửi đánh giá. Vui lòng thử lại.';
    }
+}
   }
 }
 ?>
@@ -56,31 +75,19 @@ if(isset($_REQUEST['submitFeedbackBtn'])){
     ?>
     <div class="flex items-center gap-3 px-4 py-3 rounded-xl border <?php echo $cls; ?> mb-6">
         <i class="fas <?php echo $icon; ?>"></i>
-        <span class="text-sm font-medium"><?php echo $parts[1]; ?></span>
+        <span class="text-sm font-medium"><?php echo htmlspecialchars($parts[1], ENT_QUOTES, 'UTF-8'); ?></span>
     </div>
     <?php endif; ?>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
         <form method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
             <!-- Mã học viên -->
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-2">Mã học viên</label>
                 <input type="text" value="<?php echo isset($stuId) ? $stuId : ''; ?>" 
                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 text-sm" readonly>
             </div>
-
-            <!-- Khóa học (nếu có) -->
-            <?php if($courses_result && $courses_result->num_rows > 0): ?>
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">Đánh giá cho khóa học (không bắt buộc)</label>
-                <select name="course_id" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all">
-                    <option value="">— Đánh giá chung —</option>
-                    <?php while($c = $courses_result->fetch_assoc()): ?>
-                    <option value="<?php echo $c['course_id']; ?>"><?php echo htmlspecialchars($c['course_name']); ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-            <?php endif; ?>
 
             <!-- Nội dung đánh giá -->
             <div>
