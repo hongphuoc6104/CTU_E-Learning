@@ -1,9 +1,10 @@
 <?php
 
-define('TITLE', 'Tao khoa hoc');
+define('TITLE', 'Tạo khóa học');
 define('PAGE', 'add-course');
 
 require_once(__DIR__ . '/instructorInclude/header.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 $instructorId = instructor_current_id();
 $profileName = (string) ($instructorProfile['ins_name'] ?? '');
@@ -31,18 +32,18 @@ if (isset($_POST['create_course'])) {
     }
 
     if ($error === '' && ($form['course_name'] === '' || $form['course_desc'] === '' || $form['course_duration'] === '')) {
-        $error = 'Vui long nhap day du ten, mo ta va thoi luong khoa hoc.';
+        $error = 'Vui lòng nhập đầy đủ tên, mô tả và thời lượng khóa học.';
     }
 
     $coursePrice = filter_var($form['course_price'], FILTER_VALIDATE_INT);
     $courseOriginalPrice = filter_var($form['course_original_price'], FILTER_VALIDATE_INT);
 
     if ($error === '' && ($coursePrice === false || $courseOriginalPrice === false)) {
-        $error = 'Gia khoa hoc phai la so nguyen hop le.';
+        $error = 'Giá khóa học phải là số nguyên hợp lệ.';
     }
 
     if ($error === '' && ((int) $coursePrice < 0 || (int) $courseOriginalPrice < 0)) {
-        $error = 'Gia khoa hoc khong duoc la so am.';
+        $error = 'Giá khóa học không được là số âm.';
     }
 
     if ($error === '' && (int) $courseOriginalPrice < (int) $coursePrice) {
@@ -50,7 +51,7 @@ if (isset($_POST['create_course'])) {
     }
 
     if ($error === '' && !in_array($form['course_type'], ['self_paced', 'blended'], true)) {
-        $error = 'Loai khoa hoc khong hop le.';
+        $error = 'Loại khóa học không hợp lệ.';
     }
 
     $courseImageName = (string) ($_FILES['course_img']['name'] ?? '');
@@ -73,13 +74,20 @@ if (isset($_POST['create_course'])) {
     }
 
     if ($error === '') {
-        $filename = time() . '_' . basename($courseImageName);
-        $imageDisk = __DIR__ . '/../image/courseimg/' . $filename;
-        $imageDb = 'image/courseimg/' . $filename;
+        $uploadResult = app_upload_store_file(
+            $courseImageTmp,
+            $courseImageName,
+            __DIR__ . '/../image/courseimg/',
+            'image/courseimg',
+            'thư mục ảnh khóa học',
+            'course'
+        );
 
-        if (!move_uploaded_file($courseImageTmp, $imageDisk)) {
-            $error = 'Khong the luu anh khoa hoc. Vui long thu lai.';
+        if (!($uploadResult['ok'] ?? false)) {
+            $error = (string) ($uploadResult['message'] ?? 'Khong the luu anh khoa hoc. Vui long thu lai.');
         } else {
+            $imageDisk = (string) ($uploadResult['disk_path'] ?? '');
+            $imageDb = (string) ($uploadResult['db_path'] ?? '');
             $stmt = $conn->prepare(
                 'INSERT INTO course (course_name, course_desc, course_author, course_img, course_duration, course_price, course_original_price, instructor_id, course_status, course_type, published_at, is_deleted) '
                 . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'draft\', ?, NULL, 0)'
@@ -128,7 +136,7 @@ if (isset($_POST['create_course'])) {
 
 <section class="mb-6">
   <h1 class="m-0 text-2xl font-black text-slate-900">Tao khoa hoc draft</h1>
-  <p class="m-0 mt-1 text-sm text-slate-500">Giang vien duoc tao draft, sau do bo sung noi dung va gui duyet.</p>
+  <p class="m-0 mt-1 text-sm text-slate-500">Giảng viên duoc tao draft, sau do bo sung noi dung va gui duyet.</p>
 </section>
 
 <?php if ($error !== ''): ?>
@@ -143,12 +151,12 @@ if (isset($_POST['create_course'])) {
     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
 
     <div>
-      <label for="course_name" class="mb-2 block text-sm font-bold text-slate-700">Ten khoa hoc</label>
+      <label for="course_name" class="mb-2 block text-sm font-bold text-slate-700">Tên khóa học</label>
       <input type="text" id="course_name" name="course_name" value="<?php echo htmlspecialchars($form['course_name'], ENT_QUOTES, 'UTF-8'); ?>" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="VD: React Frontend Live Bootcamp">
     </div>
 
     <div>
-      <label for="course_desc" class="mb-2 block text-sm font-bold text-slate-700">Mo ta khoa hoc</label>
+      <label for="course_desc" class="mb-2 block text-sm font-bold text-slate-700">Mô tả khóa học</label>
       <textarea id="course_desc" name="course_desc" rows="5" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="Mo ta noi dung va gia tri khoa hoc..."><?php echo htmlspecialchars($form['course_desc'], ENT_QUOTES, 'UTF-8'); ?></textarea>
     </div>
 
@@ -158,7 +166,7 @@ if (isset($_POST['create_course'])) {
         <input type="text" id="course_duration" name="course_duration" value="<?php echo htmlspecialchars($form['course_duration'], ENT_QUOTES, 'UTF-8'); ?>" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="VD: 6 tuan">
       </div>
       <div>
-        <label for="course_type" class="mb-2 block text-sm font-bold text-slate-700">Loai khoa hoc</label>
+        <label for="course_type" class="mb-2 block text-sm font-bold text-slate-700">Loại khóa học</label>
         <select id="course_type" name="course_type" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
           <option value="self_paced" <?php echo $form['course_type'] === 'self_paced' ? 'selected' : ''; ?>>Self paced</option>
           <option value="blended" <?php echo $form['course_type'] === 'blended' ? 'selected' : ''; ?>>Blended (co live session)</option>
@@ -189,7 +197,7 @@ if (isset($_POST['create_course'])) {
       </button>
       <a href="courses.php" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 no-underline">
         <i class="fas fa-arrow-left"></i>
-        <span>Quay lai</span>
+        <span>Quay lại</span>
       </a>
     </div>
   </form>

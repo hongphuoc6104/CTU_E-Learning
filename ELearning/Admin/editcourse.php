@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 define('TITLE', 'Sửa khoá học');
 define('PAGE', 'courses');
@@ -61,14 +62,20 @@ if(isset($_POST['updateCourseBtn'])){
                 $msg = ['type'=>'error', 'text'=>'Ảnh vượt quá 2MB.'];
                 goto render;
             }
-            $filename = time().'_'.basename($_FILES['course_img']['name']);
-            $disk = __DIR__.'/../image/courseimg/'.$filename;
-            if(!move_uploaded_file($_FILES['course_img']['tmp_name'], $disk)) {
-                $msg = ['type'=>'error', 'text'=>'Không thể lưu ảnh khoá học.'];
+            $uploadResult = app_upload_store_file(
+                (string) $_FILES['course_img']['tmp_name'],
+                (string) $_FILES['course_img']['name'],
+                __DIR__ . '/../image/courseimg/',
+                'image/courseimg',
+                'thư mục ảnh khóa học',
+                'course'
+            );
+            if(!($uploadResult['ok'] ?? false)) {
+                $msg = ['type'=>'error', 'text'=>(string) ($uploadResult['message'] ?? 'Không thể lưu ảnh khoá học.')];
                 goto render;
             }
-            $newImageDiskPath = $disk;
-            $img_db = 'image/courseimg/'.$filename;
+            $newImageDiskPath = (string) ($uploadResult['disk_path'] ?? '');
+            $img_db = (string) ($uploadResult['db_path'] ?? '');
         }
 
         $stmt = $conn->prepare("UPDATE course SET course_name=?, course_desc=?, course_author=?, course_duration=?, course_price=?, course_original_price=?, course_img=? WHERE course_id=?");

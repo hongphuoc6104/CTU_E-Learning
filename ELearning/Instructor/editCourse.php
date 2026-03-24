@@ -1,22 +1,23 @@
 <?php
 
-define('TITLE', 'Chinh sua khoa hoc');
+define('TITLE', 'Chỉnh sửa khóa học');
 define('PAGE', 'courses');
 
 require_once(__DIR__ . '/instructorInclude/header.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 $instructorId = instructor_current_id();
 $courseId = (int) ($_GET['id'] ?? $_POST['course_id'] ?? 0);
 
 if ($courseId <= 0) {
-    instructor_set_flash('error', 'Khoa hoc khong hop le.');
+    instructor_set_flash('error', 'Khóa học không hợp lệ.');
     header('Location: courses.php');
     exit;
 }
 
 $course = instructor_find_owned_course($conn, $courseId, $instructorId);
 if (!$course) {
-    instructor_set_flash('error', 'Ban khong duoc phep chinh sua khoa hoc nay.');
+    instructor_set_flash('error', 'Bạn không được phép chỉnh sửa khóa học này.');
     header('Location: courses.php');
     exit;
 }
@@ -40,22 +41,22 @@ if (isset($_POST['update_course'])) {
     $form['course_type'] = trim((string) ($_POST['course_type'] ?? 'self_paced'));
 
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        $error = 'Phien gui bieu mau da het han.';
+        $error = 'Phiên gửi biểu mẫu đã hết hạn.';
     }
 
     if ($error === '' && ($form['course_name'] === '' || $form['course_desc'] === '' || $form['course_duration'] === '')) {
-        $error = 'Vui long nhap day du ten, mo ta va thoi luong khoa hoc.';
+        $error = 'Vui lòng nhập đầy đủ tên, mô tả và thời lượng khóa học.';
     }
 
     $priceVal = filter_var($form['course_price'], FILTER_VALIDATE_INT);
     $origVal = filter_var($form['course_original_price'], FILTER_VALIDATE_INT);
 
     if ($error === '' && ($priceVal === false || $origVal === false)) {
-        $error = 'Gia khoa hoc phai la so nguyen hop le.';
+        $error = 'Giá khóa học phải là số nguyên hợp lệ.';
     }
 
     if ($error === '' && ((int) $priceVal < 0 || (int) $origVal < 0)) {
-        $error = 'Gia khoa hoc khong duoc la so am.';
+        $error = 'Giá khóa học không được là số âm.';
     }
 
     if ($error === '' && (int) $origVal < (int) $priceVal) {
@@ -63,7 +64,7 @@ if (isset($_POST['update_course'])) {
     }
 
     if ($error === '' && !in_array($form['course_type'], ['self_paced', 'blended'], true)) {
-        $error = 'Loai khoa hoc khong hop le.';
+        $error = 'Loại khóa học không hợp lệ.';
     }
 
     $newImageDiskPath = null;
@@ -83,11 +84,19 @@ if (isset($_POST['update_course'])) {
         } elseif ($courseImageSize > 2 * 1024 * 1024) {
             $error = 'Anh qua lon. Kich thuoc toi da 2MB.';
         } else {
-            $filename = time() . '_' . basename($courseImageName);
-            $newImageDiskPath = __DIR__ . '/../image/courseimg/' . $filename;
-            $courseImageDb = 'image/courseimg/' . $filename;
-            if (!move_uploaded_file($courseImageTmp, $newImageDiskPath)) {
-                $error = 'Khong the luu anh moi cho khoa hoc.';
+            $uploadResult = app_upload_store_file(
+                $courseImageTmp,
+                $courseImageName,
+                __DIR__ . '/../image/courseimg/',
+                'image/courseimg',
+                'thư mục ảnh khóa học',
+                'course'
+            );
+            if (!($uploadResult['ok'] ?? false)) {
+                $error = (string) ($uploadResult['message'] ?? 'Không thể lưu ảnh mới cho khóa học.');
+            } else {
+                $newImageDiskPath = (string) ($uploadResult['disk_path'] ?? '');
+                $courseImageDb = (string) ($uploadResult['db_path'] ?? '');
             }
         }
     }
@@ -102,7 +111,7 @@ if (isset($_POST['update_course'])) {
             if ($newImageDiskPath !== null && is_file($newImageDiskPath)) {
                 @unlink($newImageDiskPath);
             }
-            $error = 'Khong the cap nhat khoa hoc luc nay.';
+            $error = 'Không thể cập nhật khóa học lúc này.';
         } else {
             $author = (string) ($instructorProfile['ins_name'] ?? 'Instructor');
             $priceNum = (int) $priceVal;
@@ -127,9 +136,9 @@ if (isset($_POST['update_course'])) {
                 if ($newImageDiskPath !== null && is_file($newImageDiskPath)) {
                     @unlink($newImageDiskPath);
                 }
-                $error = 'Khong the cap nhat khoa hoc luc nay.';
+                $error = 'Không thể cập nhật khóa học lúc này.';
             } else {
-                instructor_set_flash('success', 'Da cap nhat khoa hoc thanh cong.');
+                instructor_set_flash('success', 'Đã cập nhật khóa học thành công.');
                 header('Location: editCourse.php?id=' . $courseId);
                 exit;
             }
@@ -139,7 +148,7 @@ if (isset($_POST['update_course'])) {
 
 $course = instructor_find_owned_course($conn, $courseId, $instructorId);
 if (!$course) {
-    instructor_set_flash('error', 'Khoa hoc khong con ton tai hoac ban khong con quyen truy cap.');
+    instructor_set_flash('error', 'Khóa học không còn tồn tại hoặc bạn không còn quyền truy cập.');
     header('Location: courses.php');
     exit;
 }
@@ -153,8 +162,8 @@ if ($courseImageDisplay === '') {
 
 <section class="mb-6 flex flex-wrap items-start justify-between gap-3">
   <div>
-    <h1 class="m-0 text-2xl font-black text-slate-900">Chinh sua khoa hoc</h1>
-    <p class="m-0 mt-1 text-sm text-slate-500">Ban chi duoc cap nhat khoa hoc do minh so huu.</p>
+    <h1 class="m-0 text-2xl font-black text-slate-900">Chỉnh sửa khóa học</h1>
+    <p class="m-0 mt-1 text-sm text-slate-500">Bạn chỉ được cập nhật khóa học do mình sở hữu.</p>
   </div>
   <div class="flex items-center gap-2">
     <span class="inline-flex rounded-lg px-3 py-1 text-xs font-bold <?php echo htmlspecialchars((string) $statusMeta['class'], ENT_QUOTES, 'UTF-8'); ?>">
@@ -162,7 +171,7 @@ if ($courseImageDisplay === '') {
     </span>
     <a href="courses.php" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 no-underline">
       <i class="fas fa-arrow-left"></i>
-      <span>Ve danh sach</span>
+      <span>Về danh sách</span>
     </a>
   </div>
 </section>
@@ -181,12 +190,12 @@ if ($courseImageDisplay === '') {
       <input type="hidden" name="course_id" value="<?php echo $courseId; ?>">
 
       <div>
-        <label for="course_name" class="mb-2 block text-sm font-bold text-slate-700">Ten khoa hoc</label>
+        <label for="course_name" class="mb-2 block text-sm font-bold text-slate-700">Tên khóa học</label>
         <input type="text" id="course_name" name="course_name" value="<?php echo htmlspecialchars($form['course_name'], ENT_QUOTES, 'UTF-8'); ?>" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
       </div>
 
       <div>
-        <label for="course_desc" class="mb-2 block text-sm font-bold text-slate-700">Mo ta khoa hoc</label>
+        <label for="course_desc" class="mb-2 block text-sm font-bold text-slate-700">Mô tả khóa học</label>
         <textarea id="course_desc" name="course_desc" rows="5" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"><?php echo htmlspecialchars($form['course_desc'], ENT_QUOTES, 'UTF-8'); ?></textarea>
       </div>
 
@@ -196,7 +205,7 @@ if ($courseImageDisplay === '') {
           <input type="text" id="course_duration" name="course_duration" value="<?php echo htmlspecialchars($form['course_duration'], ENT_QUOTES, 'UTF-8'); ?>" required class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
         </div>
         <div>
-          <label for="course_type" class="mb-2 block text-sm font-bold text-slate-700">Loai khoa hoc</label>
+          <label for="course_type" class="mb-2 block text-sm font-bold text-slate-700">Loại khóa học</label>
           <select id="course_type" name="course_type" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
             <option value="self_paced" <?php echo $form['course_type'] === 'self_paced' ? 'selected' : ''; ?>>Self paced</option>
             <option value="blended" <?php echo $form['course_type'] === 'blended' ? 'selected' : ''; ?>>Blended</option>
@@ -228,7 +237,7 @@ if ($courseImageDisplay === '') {
         </button>
         <a href="sections.php?course_id=<?php echo $courseId; ?>" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 no-underline">
           <i class="fas fa-list-ol"></i>
-          <span>Quan ly section</span>
+          <span>Quản lý section</span>
         </a>
       </div>
     </form>
@@ -243,7 +252,7 @@ if ($courseImageDisplay === '') {
         <dd class="font-bold text-slate-700">#<?php echo $courseId; ?></dd>
       </div>
       <div class="flex items-center justify-between gap-3">
-        <dt>Trang thai</dt>
+        <dt>Trạng thái</dt>
         <dd class="font-bold text-slate-700"><?php echo htmlspecialchars((string) $statusMeta['label'], ENT_QUOTES, 'UTF-8'); ?></dd>
       </div>
       <div class="flex items-center justify-between gap-3">

@@ -1,6 +1,6 @@
 <?php
 
-define('TITLE', 'Hoc vien theo khoa hoc');
+define('TITLE', 'Học viên theo khóa học');
 define('PAGE', 'students');
 
 require_once(__DIR__ . '/instructorInclude/header.php');
@@ -41,7 +41,7 @@ foreach ($publishedCourses as $course) {
 }
 
 if ($filterCourseId > 0 && !$selectedCourse) {
-    instructor_set_flash('error', 'Ban khong duoc phep xem hoc vien cua khoa hoc nay.');
+    instructor_set_flash('error', 'Bạn không được phép xem học viên của khóa học này.');
     header('Location: students.php');
     exit;
 }
@@ -118,23 +118,23 @@ if ($selectedCourse) {
 ?>
 
 <section class="mb-6">
-  <h1 class="m-0 text-2xl font-black text-slate-900">Hoc vien theo khoa hoc</h1>
-  <p class="m-0 mt-1 text-sm text-slate-500">Chi hien thi hoc vien da enrollment vao khoa hoc published do ban so huu.</p>
+  <h1 class="m-0 text-2xl font-black text-slate-900">Học viên theo khóa học</h1>
+  <p class="m-0 mt-1 text-sm text-slate-500">Chỉ hiển thị học viên đã enrollment vào khóa học published do bạn sở hữu.</p>
 </section>
 
 <?php if (count($publishedCourses) === 0): ?>
   <section class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-    <p class="m-0 text-sm text-slate-500">Ban chua co khoa hoc published nao de xem danh sach hoc vien.</p>
+    <p class="m-0 text-sm text-slate-500">Bạn chưa có khóa học published nào để xem danh sách học viên.</p>
     <a href="courses.php" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white no-underline transition hover:bg-primary/90">
       <i class="fas fa-layer-group"></i>
-      <span>Quan ly khoa hoc</span>
+      <span>Quản lý khóa học</span>
     </a>
   </section>
 <?php else: ?>
   <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
     <form method="get" class="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
       <div>
-        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Khoa hoc published</label>
+        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Khóa học published</label>
         <select id="course_id" name="course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
           <?php foreach ($publishedCourses as $course): ?>
             <option value="<?php echo (int) ($course['course_id'] ?? 0); ?>" <?php echo ((int) ($course['course_id'] ?? 0) === $filterCourseId) ? 'selected' : ''; ?>>
@@ -144,12 +144,12 @@ if ($selectedCourse) {
         </select>
       </div>
       <div>
-        <label for="q" class="mb-2 block text-sm font-bold text-slate-700">Tim hoc vien</label>
-        <input type="text" id="q" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Ten hoac email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
+        <label for="q" class="mb-2 block text-sm font-bold text-slate-700">Tìm học viên</label>
+        <input type="text" id="q" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Tên hoặc email" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
       </div>
       <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl border-0 bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90">
         <i class="fas fa-filter"></i>
-        <span>Ap dung</span>
+        <span>Áp dụng</span>
       </button>
     </form>
   </section>
@@ -157,15 +157,15 @@ if ($selectedCourse) {
   <?php if ($selectedCourse): ?>
     <section class="mb-5 grid gap-4 md:grid-cols-3">
       <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Tong hoc vien active</p>
+        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Tổng học viên active</p>
         <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo (int) $summary['total_students']; ?></p>
       </article>
       <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Tien do trung binh</p>
+        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Tiến độ trung bình</p>
         <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo number_format((float) $summary['avg_progress'], 2); ?>%</p>
       </article>
       <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Hoan thanh khoa hoc</p>
+        <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Hoàn thành khóa học</p>
         <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo (int) $summary['completed_count']; ?></p>
       </article>
     </section>
@@ -175,10 +175,10 @@ if ($selectedCourse) {
         <table class="w-full min-w-[920px] text-sm">
           <thead class="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
-              <th class="px-4 py-3 text-left font-bold">Hoc vien</th>
+              <th class="px-4 py-3 text-left font-bold">Học viên</th>
               <th class="px-4 py-3 text-left font-bold">Email</th>
-              <th class="px-4 py-3 text-left font-bold">Nghe nghiep</th>
-              <th class="px-4 py-3 text-center font-bold">Tien do</th>
+              <th class="px-4 py-3 text-left font-bold">Nghề nghiệp</th>
+              <th class="px-4 py-3 text-center font-bold">Tiến độ</th>
               <th class="px-4 py-3 text-left font-bold">Enrollment</th>
               <th class="px-4 py-3 text-left font-bold">Completed at</th>
             </tr>
@@ -214,7 +214,7 @@ if ($selectedCourse) {
               <?php endforeach; ?>
             <?php else: ?>
               <tr>
-                <td colspan="6" class="px-4 py-14 text-center text-sm text-slate-400">Chua co hoc vien active cho khoa hoc nay.</td>
+                <td colspan="6" class="px-4 py-14 text-center text-sm text-slate-400">Chưa có học viên active cho khóa học này.</td>
               </tr>
             <?php endif; ?>
           </tbody>

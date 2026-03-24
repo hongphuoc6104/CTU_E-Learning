@@ -256,8 +256,8 @@ if ($hasAccess) {
     }
 }
 
-$courseName = (string) ($course['course_name'] ?? 'Khoa hoc');
-$studentName = (string) ($studentProfile['stu_name'] ?? 'Hoc vien');
+$courseName = (string) ($course['course_name'] ?? 'Khóa học');
+$studentName = (string) ($studentProfile['stu_name'] ?? 'Học viên');
 $studentImg = '../' . ltrim(str_replace('../', '', (string) ($studentProfile['stu_img'] ?? '')), '/');
 
 $courseProgressPercent = max(0, min(100, (float) ($progressSummary['progress_percent'] ?? 0)));
@@ -322,11 +322,11 @@ $currentIsCompleted = $currentItem
                 class="inline-flex items-center gap-2 rounded-lg border border-white/15 px-2 sm:px-3 py-2 text-xs font-semibold text-white/90 transition hover:border-white/30 hover:text-white"
             >
                 <i class="fas fa-arrow-left"></i>
-                <span class="hidden sm:inline">Khoa hoc cua toi</span>
+                <span class="hidden sm:inline">Khóa học của tôi</span>
             </a>
             <div class="min-w-0">
                 <p class="truncate text-sm font-semibold text-white md:text-base"><?php echo htmlspecialchars($courseName, ENT_QUOTES, 'UTF-8'); ?></p>
-                <p class="truncate text-xs text-white/60"><?php echo htmlspecialchars((string) ($course['course_author'] ?? 'Giang vien'), ENT_QUOTES, 'UTF-8'); ?></p>
+                <p class="truncate text-xs text-white/60"><?php echo htmlspecialchars((string) ($course['course_author'] ?? 'Giảng viên'), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
         </div>
         <div class="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -358,22 +358,22 @@ $currentIsCompleted = $currentItem
             <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-500/20 text-red-200">
                 <i class="fas fa-lock"></i>
             </div>
-            <h1 class="text-xl font-bold text-white">Khong the truy cap khoa hoc</h1>
+            <h1 class="text-xl font-bold text-white">Không thể truy cập khóa học</h1>
             <p class="mt-2 text-sm text-red-100/90">
-                Tai khoan cua ban chua co enrollment hop le cho khoa hoc nay. Vui long quay lai trang Khoa hoc cua toi.
+                Tài khoản của bạn chưa có enrollment hợp lệ cho khóa học này. Vui lòng quay lại trang Khóa học của tôi.
             </p>
             <a
                 href="myCourse.php"
                 class="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-slate-900 transition hover:bg-slate-100"
             >
                 <i class="fas fa-book-reader"></i>
-                <span>Ve khoa hoc cua toi</span>
+                <span>Về khóa học của tôi</span>
             </a>
         </div>
     <?php else: ?>
         <section class="mb-4 grid gap-3 md:grid-cols-4">
             <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
-                <p class="text-xs uppercase tracking-wide text-white/60">Tien do khoa hoc</p>
+                <p class="text-xs uppercase tracking-wide text-white/60">Tiến độ khóa học</p>
                 <p class="mt-2 text-2xl font-black text-white"><?php echo $courseProgressPercentInt; ?>%</p>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                     <div class="h-full rounded-full bg-emerald-400" style="width: <?php echo $courseProgressPercentInt; ?>%;"></div>
@@ -401,7 +401,7 @@ $currentIsCompleted = $currentItem
                         class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
                     >
                         <i class="fas fa-forward"></i>
-                        <span>Tiep tuc hoc</span>
+                        <span>Tiếp tục học</span>
                     </a>
                     <p class="mt-2 line-clamp-2 text-xs text-white/70">
                         <?php echo htmlspecialchars((string) ($nextIncompleteItem['item_title'] ?? 'Muc tiep theo'), ENT_QUOTES, 'UTF-8'); ?>
@@ -417,9 +417,9 @@ $currentIsCompleted = $currentItem
                 <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white/70">
                     <i class="fas fa-inbox text-2xl"></i>
                 </div>
-                <h2 class="text-xl font-bold text-white">Khoa hoc chua co noi dung</h2>
+                <h2 class="text-xl font-bold text-white">Khóa học chưa có nội dung</h2>
                 <p class="mt-2 text-sm text-white/70">
-                    Chua co section hoac learning item nao duoc xuat ban cho khoa hoc nay.
+                    Chưa có section hoặc learning item nào được xuất bản cho khóa học này.
                 </p>
             </section>
         <?php else: ?>
@@ -863,7 +863,7 @@ $currentIsCompleted = $currentItem
 
                                     <h3 class="mt-3 text-lg font-bold text-white"><?php echo htmlspecialchars($sessionTitle, ENT_QUOTES, 'UTF-8'); ?></h3>
                                     <p class="mt-2 text-sm text-white/75">
-                                        <?php echo $sessionDesc !== '' ? htmlspecialchars($sessionDesc, ENT_QUOTES, 'UTF-8') : 'Buoi hoc truc tiep danh cho hoc vien da enrollment.'; ?>
+                                        <?php echo $sessionDesc !== '' ? htmlspecialchars($sessionDesc, ENT_QUOTES, 'UTF-8') : 'Buổi học trực tiếp dành cho học viên đã enrollment.'; ?>
                                     </p>
 
                                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -960,7 +960,7 @@ $currentIsCompleted = $currentItem
                                             </div>
                                         <?php else: ?>
                                             <div class="rounded-xl border border-amber-400/30 bg-amber-500/10 p-5 text-amber-100">
-                                                Khong the hien thi replay dang embed.
+                                                Không thể hiển thị replay đang embed.
                                             </div>
                                         <?php endif; ?>
                                     <?php else: ?>

@@ -3,7 +3,7 @@ include('./dbConnection.php');
 include('./mainInclude/header.php');
 ?>
 
-<div class="pt-32 pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
+<div class="pt-12 sm:pt-16 pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
   <div class="absolute inset-0 bg-primary/40"></div>
   <div class="max-w-7xl mx-auto px-6 relative z-10 text-center">
     <h1 class="text-4xl md:text-5xl font-black text-white mb-4">Trạng thái thanh toán</h1>

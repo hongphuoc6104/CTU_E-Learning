@@ -10,7 +10,7 @@
   $studentId = $stuEmail !== '' ? commerce_get_student_id($conn, $stuEmail) : null;
 ?>  
 <!-- Hero Section -->
-<section class="pt-28 sm:pt-40 pb-16 sm:pb-24 hero-pattern px-4 sm:px-6">
+<section class="pt-12 sm:pt-20 pb-16 sm:pb-24 hero-pattern px-4 sm:px-6">
 <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 <div class="space-y-6 sm:space-y-8">
 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">

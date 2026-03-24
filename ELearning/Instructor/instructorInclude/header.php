@@ -14,13 +14,13 @@ $currentPage = defined('PAGE') ? PAGE : '';
 $flash = instructor_get_flash();
 
 $navLinks = [
-    ['page' => 'dashboard', 'href' => 'instructorDashboard.php', 'label' => 'Dashboard', 'icon' => 'fa-chart-pie'],
-    ['page' => 'courses', 'href' => 'courses.php', 'label' => 'Khoa hoc', 'icon' => 'fa-layer-group'],
-    ['page' => 'add-course', 'href' => 'addCourse.php', 'label' => 'Tao khoa hoc', 'icon' => 'fa-plus-circle'],
-    ['page' => 'sections', 'href' => 'sections.php', 'label' => 'Sections', 'icon' => 'fa-list-ol'],
-    ['page' => 'items', 'href' => 'learningItems.php', 'label' => 'Learning items', 'icon' => 'fa-book-open'],
-    ['page' => 'live', 'href' => 'liveSessions.php', 'label' => 'Live sessions', 'icon' => 'fa-video'],
-    ['page' => 'students', 'href' => 'students.php', 'label' => 'Hoc vien', 'icon' => 'fa-users'],
+    ['page' => 'dashboard', 'href' => 'instructorDashboard.php', 'label' => 'Tổng quan', 'icon' => 'fa-chart-pie'],
+    ['page' => 'courses', 'href' => 'courses.php', 'label' => 'Khóa học', 'icon' => 'fa-layer-group'],
+    ['page' => 'add-course', 'href' => 'addCourse.php', 'label' => 'Tạo khóa học', 'icon' => 'fa-plus-circle'],
+    ['page' => 'sections', 'href' => 'sections.php', 'label' => 'Mục học', 'icon' => 'fa-list-ol'],
+    ['page' => 'items', 'href' => 'learningItems.php', 'label' => 'Nội dung học', 'icon' => 'fa-book-open'],
+    ['page' => 'live', 'href' => 'liveSessions.php', 'label' => 'Lớp trực tiếp', 'icon' => 'fa-video'],
+    ['page' => 'students', 'href' => 'students.php', 'label' => 'Học viên', 'icon' => 'fa-users'],
 ];
 
 $flashMeta = [
@@ -91,7 +91,7 @@ if ($profileImg === '') {
         </div>
         <div>
           <p class="m-0 text-sm font-extrabold leading-none text-slate-900">CTU Instructor</p>
-          <p class="m-0 mt-1 text-xs font-medium text-slate-500">Course authoring and live class</p>
+          <p class="m-0 mt-1 text-xs font-medium text-slate-500">Quản lý khóa học và lớp live</p>
         </div>
       </a>
 
@@ -103,7 +103,7 @@ if ($profileImg === '') {
         </div>
         <a href="logout.php" class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 no-underline">
           <i class="fas fa-sign-out-alt"></i>
-          <span>Dang xuat</span>
+          <span>Đăng xuất</span>
         </a>
       </div>
     </div>
@@ -120,7 +120,7 @@ if ($profileImg === '') {
         </nav>
         <a href="../index.php" class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 no-underline">
           <i class="fas fa-external-link-alt"></i>
-          <span>Trang hoc vien</span>
+          <span>Trang học viên</span>
         </a>
       </div>
 
@@ -134,7 +134,7 @@ if ($profileImg === '') {
         </div>
         <a href="logout.php" class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-100 no-underline">
           <i class="fas fa-sign-out-alt"></i>
-          <span>Dang xuat</span>
+          <span>Đăng xuất</span>
         </a>
       </div>
     </div>

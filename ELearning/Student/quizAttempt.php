@@ -180,7 +180,7 @@ foreach ($questionMap as $questionId => $meta) {
 }
 
 if ($malformed) {
-    $redirectWithFeedback('Bai nop chua hop le. Vui long chon day du dap an cho tat ca cau hoi.', 'warning');
+    $redirectWithFeedback('Bài nộp chưa hợp lệ. Vui lòng chọn đầy đủ đáp án cho tất cả câu hỏi.', 'warning');
 }
 
 if ($totalPoints <= 0) {
@@ -232,7 +232,7 @@ $attemptsLeft = $maxAttempts > 0 ? max(0, $maxAttempts - $attemptNumber) : null;
 $scoreText = rtrim(rtrim(number_format($scorePercent, 2, '.', ''), '0'), '.');
 
 if ($passed === 1) {
-    $message = 'Ban da pass quiz voi ' . $scoreText . '%. Tien do khoa hoc hien tai: ' . round($progressPercent) . '%.';
+    $message = 'Bạn đã pass quiz với ' . $scoreText . '%. Tiến độ khóa học hiện tại: ' . round($progressPercent) . '%.';
     $redirectWithFeedback($message, 'success');
 }
 

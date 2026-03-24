@@ -26,7 +26,7 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-  <title><?php echo $pageTitle; ?> — CTU Admin</title>
+  <title><?php echo $pageTitle; ?> — CTU Quản trị</title>
 
   <!-- Compiled Tailwind CSS -->
   <link rel="stylesheet" href="../css/tailwind.css">
@@ -102,7 +102,7 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
       </div>
       <div>
         <p class="text-white font-extrabold text-sm leading-none tracking-tight">CTU E-Learning</p>
-        <p class="text-xs mt-0.5" style="color:rgba(16,185,129,.7);">Admin Dashboard</p>
+        <p class="text-xs mt-0.5" style="color:rgba(16,185,129,.7);">Khu quản trị</p>
       </div>
     </a>
 
@@ -115,10 +115,10 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
 
       <p class="nav-section">Quản lý nội dung</p>
       <a href="courses.php" class="nav-link <?php echo ($currentPage=='courses')?'active':''; ?>">
-        <i class="fas fa-layer-group"></i> Khoá học
+        <i class="fas fa-layer-group"></i> Khóa học
       </a>
       <a href="courseReview.php" class="nav-link <?php echo ($currentPage=='coursereview')?'active':''; ?>">
-        <i class="fas fa-clipboard-check"></i> Duyệt khoá học
+        <i class="fas fa-clipboard-check"></i> Duyệt khóa học
       </a>
       <a href="lessons.php" class="nav-link <?php echo ($currentPage=='lessons')?'active':''; ?>">
         <i class="fas fa-play-circle"></i> Bài học

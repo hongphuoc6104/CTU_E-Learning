@@ -46,7 +46,7 @@ async function checkInstructorLogin() {
   const pass = passInput ? passInput.value : '';
 
   if (email === '' || pass.trim() === '') {
-    setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Vui long nhap day du email va mat khau.</span>');
+    setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Vui lòng nhập đầy đủ email và mật khẩu.</span>');
     return;
   }
 
@@ -58,17 +58,17 @@ async function checkInstructorLogin() {
     });
 
     if (Number(data) === 0) {
-      setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Email hoac mat khau khong dung.</span>');
+      setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Email hoặc mật khẩu không đúng.</span>');
       return;
     }
 
-    setInstructorStatus('<span class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">Dang nhap thanh cong, dang chuyen huong...</span>');
+    setInstructorStatus('<span class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">Đăng nhập thành công, đang chuyển hướng...</span>');
     clearInstructorLoginField();
     window.setTimeout(() => {
       window.location.href = 'instructorDashboard.php';
     }, 700);
   } catch (_error) {
-    setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Khong the ket noi may chu.</span>');
+    setInstructorStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Không thể kết nối máy chủ.</span>');
   }
 }
 

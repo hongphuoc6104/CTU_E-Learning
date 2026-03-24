@@ -34,7 +34,7 @@
   include('./mainInclude/header.php'); 
 ?>  
 <!-- Page Header Header -->
-<div class="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
+<div class="pt-10 sm:pt-16 pb-12 sm:pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_60%)]"></div>
     <div class="absolute inset-0 bg-primary/40"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">

@@ -65,7 +65,7 @@ foreach ($ownedCourses as $ownedCourse) {
 }
 
 if ($filterCourseId > 0 && !$selectedCourse) {
-    instructor_set_flash('error', 'Ban khong duoc phep truy cap khoa hoc nay.');
+    instructor_set_flash('error', 'Bạn không được phép truy cập khóa học này.');
     header('Location: liveSessions.php');
     exit;
 }
@@ -80,7 +80,7 @@ if ($filterSectionId > 0) {
         }
     }
     if (!$sectionMatched) {
-        instructor_set_flash('error', 'Section khong hop le voi khoa hoc da chon.');
+        instructor_set_flash('error', 'Section không hợp lệ với khóa học đã chọn.');
         header('Location: liveSessions.php?course_id=' . $filterCourseId);
         exit;
     }
@@ -108,7 +108,7 @@ if (!function_exists('parse_local_datetime')) {
 
 if (isset($_POST['create_live_session'])) {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        instructor_set_flash('error', 'Phien gui bieu mau da het han.');
+        instructor_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn.');
         header('Location: liveSessions.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -124,7 +124,7 @@ if (isset($_POST['create_live_session'])) {
 
     $createCourse = instructor_find_owned_course($conn, $createCourseId, $instructorId);
     if (!$createCourse) {
-        instructor_set_flash('error', 'Ban khong duoc phep tao live session cho khoa hoc nay.');
+        instructor_set_flash('error', 'Bạn không được phép tạo live session cho khóa học này.');
         header('Location: liveSessions.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -140,7 +140,7 @@ if (isset($_POST['create_live_session'])) {
     }
 
     if (!$sectionValid) {
-        instructor_set_flash('error', 'Section khong hop le cho khoa hoc da chon.');
+        instructor_set_flash('error', 'Section không hợp lệ cho khóa học đã chọn.');
         header('Location: liveSessions.php?course_id=' . $createCourseId);
         exit;
     }
@@ -234,7 +234,7 @@ if (isset($_POST['create_live_session'])) {
         instructor_set_flash('error', 'Khong the tao live session luc nay.');
     } else {
         $conn->commit();
-        instructor_set_flash('success', 'Da tao live session o trang thai scheduled. Session da duoc gan vao timeline khoa hoc.');
+        instructor_set_flash('success', 'Đã tạo live session ở trạng thái scheduled. Session đã được gắn vào timeline khóa học.');
     }
 
     header('Location: liveSessions.php?course_id=' . $createCourseId . '&section_id=' . $createSectionId);
@@ -243,7 +243,7 @@ if (isset($_POST['create_live_session'])) {
 
 if (isset($_POST['save_replay'])) {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        instructor_set_flash('error', 'Phien gui bieu mau da het han.');
+        instructor_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn.');
         header('Location: liveSessions.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -485,17 +485,17 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
 
 <?php if (count($ownedCourses) === 0): ?>
   <section class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-    <p class="m-0 text-sm text-slate-500">Ban chua co khoa hoc nao de tao live session.</p>
+    <p class="m-0 text-sm text-slate-500">Bạn chưa có khóa học nào để tạo live session.</p>
     <a href="addCourse.php" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white no-underline transition hover:bg-primary/90">
       <i class="fas fa-plus-circle"></i>
-      <span>Tao khoa hoc</span>
+      <span>Tạo khóa học</span>
     </a>
   </section>
 <?php else: ?>
   <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
     <form method="get" class="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
       <div>
-        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Loc theo khoa hoc</label>
+        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Lọc theo khóa học</label>
         <select id="course_id" name="course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
           <?php foreach ($ownedCourses as $ownedCourse): ?>
             <option value="<?php echo (int) ($ownedCourse['course_id'] ?? 0); ?>" <?php echo ((int) ($ownedCourse['course_id'] ?? 0) === $filterCourseId) ? 'selected' : ''; ?>>
@@ -507,7 +507,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
       <div>
         <label for="section_id" class="mb-2 block text-sm font-bold text-slate-700">Loc theo section</label>
         <select id="section_id" name="section_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
-          <option value="0">Tat ca section</option>
+          <option value="0">Tất cả section</option>
           <?php foreach (($allSections[$filterCourseId] ?? []) as $sectionInfo): ?>
             <option value="<?php echo (int) ($sectionInfo['section_id'] ?? 0); ?>" <?php echo ((int) ($sectionInfo['section_id'] ?? 0) === $filterSectionId) ? 'selected' : ''; ?>>
               #<?php echo (int) ($sectionInfo['section_position'] ?? 0); ?> - <?php echo htmlspecialchars((string) ($sectionInfo['section_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
@@ -517,7 +517,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
       </div>
       <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl border-0 bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90">
         <i class="fas fa-filter"></i>
-        <span>Ap dung</span>
+        <span>Áp dụng</span>
       </button>
     </form>
   </section>
@@ -529,7 +529,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
 
       <div class="grid gap-4 md:grid-cols-2">
         <div>
-          <label for="create_course_id" class="mb-2 block text-sm font-bold text-slate-700">Khoa hoc</label>
+          <label for="create_course_id" class="mb-2 block text-sm font-bold text-slate-700">Khóa học</label>
           <select id="create_course_id" name="create_course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" required>
             <?php foreach ($ownedCourses as $ownedCourse): ?>
               <option value="<?php echo (int) ($ownedCourse['course_id'] ?? 0); ?>" <?php echo ((int) ($ownedCourse['course_id'] ?? 0) === $createDefaultCourseId) ? 'selected' : ''; ?>>
@@ -601,13 +601,13 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
           $isReplayFormEnabled = in_array($resolvedStatus, ['ended', 'replay_available'], true);
           $stateNote = '';
           if ($resolvedStatus === 'scheduled') {
-              $stateNote = 'Truoc gio hoc: hien thi upcoming state.';
+              $stateNote = 'Trước giờ học: hiển thị upcoming state.';
           } elseif ($resolvedStatus === 'live') {
-              $stateNote = 'Dang den khung gio hoc: hien thi join CTA.';
+              $stateNote = 'Đang đến khung giờ học: hiển thị join CTA.';
           } elseif ($resolvedStatus === 'ended') {
               $stateNote = 'Buoi hoc da ket thuc: cho replay URL.';
           } elseif ($resolvedStatus === 'replay_available') {
-              $stateNote = 'Replay da san sang cho hoc vien xem lai.';
+              $stateNote = 'Replay đã sẵn sàng cho học viên xem lại.';
           }
         ?>
         <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

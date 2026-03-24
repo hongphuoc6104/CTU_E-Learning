@@ -64,7 +64,7 @@ foreach ($ownedCourses as $ownedCourse) {
 }
 
 if ($filterCourseId > 0 && !$selectedCourse) {
-    instructor_set_flash('error', 'Ban khong duoc phep truy cap khoa hoc nay.');
+    instructor_set_flash('error', 'Bạn không được phép truy cập khóa học này.');
     header('Location: learningItems.php');
     exit;
 }
@@ -79,7 +79,7 @@ if ($filterSectionId > 0) {
         }
     }
     if (!$sectionMatched) {
-        instructor_set_flash('error', 'Section khong hop le voi khoa hoc da chon.');
+        instructor_set_flash('error', 'Section không hợp lệ với khóa học đã chọn.');
         header('Location: learningItems.php?course_id=' . $filterCourseId);
         exit;
     }
@@ -87,7 +87,7 @@ if ($filterSectionId > 0) {
 
 if (isset($_POST['delete_item'])) {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        instructor_set_flash('error', 'Phien gui bieu mau da het han.');
+        instructor_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn.');
         header('Location: learningItems.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -119,7 +119,7 @@ if (isset($_POST['delete_item'])) {
     }
 
     if ($verifiedCourseId <= 0) {
-        instructor_set_flash('error', 'Ban khong duoc phep xoa learning item nay.');
+        instructor_set_flash('error', 'Bạn không được phép xóa learning item này.');
         header('Location: learningItems.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -130,12 +130,12 @@ if (isset($_POST['delete_item'])) {
         $ok = $deleteStmt->execute();
         $deleteStmt->close();
         if ($ok) {
-            instructor_set_flash('success', 'Da xoa learning item.');
+            instructor_set_flash('success', 'Đã xóa learning item.');
         } else {
-            instructor_set_flash('error', 'Khong the xoa learning item luc nay.');
+            instructor_set_flash('error', 'Không thể xóa learning item lúc này.');
         }
     } else {
-        instructor_set_flash('error', 'Khong the xoa learning item luc nay.');
+        instructor_set_flash('error', 'Không thể xóa learning item lúc này.');
     }
 
     $redirectCourseId = $verifiedCourseId > 0 ? $verifiedCourseId : $filterCourseId;
@@ -145,7 +145,7 @@ if (isset($_POST['delete_item'])) {
 
 if (isset($_POST['create_item'])) {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        instructor_set_flash('error', 'Phien gui bieu mau da het han.');
+        instructor_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn.');
         header('Location: learningItems.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -161,7 +161,7 @@ if (isset($_POST['create_item'])) {
 
     $createCourse = instructor_find_owned_course($conn, $createCourseId, $instructorId);
     if (!$createCourse) {
-        instructor_set_flash('error', 'Ban khong duoc phep tao learning item cho khoa hoc nay.');
+        instructor_set_flash('error', 'Bạn không được phép tạo learning item cho khóa học này.');
         header('Location: learningItems.php?course_id=' . $filterCourseId . '&section_id=' . $filterSectionId);
         exit;
     }
@@ -177,7 +177,7 @@ if (isset($_POST['create_item'])) {
     }
 
     if (!$sectionValid) {
-        instructor_set_flash('error', 'Section khong hop le cho khoa hoc da chon.');
+        instructor_set_flash('error', 'Section không hợp lệ cho khóa học đã chọn.');
         header('Location: learningItems.php?course_id=' . $createCourseId);
         exit;
     }
@@ -196,7 +196,7 @@ if (isset($_POST['create_item'])) {
     }
 
     if (!in_array($contentStatus, ['draft', 'published'], true)) {
-        instructor_set_flash('error', 'Trang thai learning item khong hop le.');
+        instructor_set_flash('error', 'Trạng thái learning item khong hop le.');
         header('Location: learningItems.php?course_id=' . $createCourseId . '&section_id=' . $createSectionId);
         exit;
     }
@@ -250,7 +250,7 @@ if (isset($_POST['create_item'])) {
             $quizValidStmt->close();
         }
         if (!$quizValid) {
-            instructor_set_flash('error', 'Quiz khong hop le cho khoa hoc nay.');
+            instructor_set_flash('error', 'Quiz không hợp lệ cho khóa học này.');
             header('Location: learningItems.php?course_id=' . $createCourseId . '&section_id=' . $createSectionId);
             exit;
         }
@@ -596,17 +596,17 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
 
 <?php if (count($ownedCourses) === 0): ?>
   <section class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-    <p class="m-0 text-sm text-slate-500">Ban chua co khoa hoc nao. Hay tao khoa hoc truoc.</p>
+    <p class="m-0 text-sm text-slate-500">Bạn chưa có khóa học nào. Hãy tạo khóa học trước.</p>
     <a href="addCourse.php" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white no-underline transition hover:bg-primary/90">
       <i class="fas fa-plus-circle"></i>
-      <span>Tao khoa hoc</span>
+      <span>Tạo khóa học</span>
     </a>
   </section>
 <?php else: ?>
   <section class="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
     <form method="get" class="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
       <div>
-        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Loc theo khoa hoc</label>
+        <label for="course_id" class="mb-2 block text-sm font-bold text-slate-700">Lọc theo khóa học</label>
         <select id="course_id" name="course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
           <?php foreach ($ownedCourses as $ownedCourse): ?>
             <option value="<?php echo (int) ($ownedCourse['course_id'] ?? 0); ?>" <?php echo ((int) ($ownedCourse['course_id'] ?? 0) === $filterCourseId) ? 'selected' : ''; ?>>
@@ -618,7 +618,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
       <div>
         <label for="section_id" class="mb-2 block text-sm font-bold text-slate-700">Loc theo section</label>
         <select id="section_id" name="section_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
-          <option value="0">Tat ca section</option>
+          <option value="0">Tất cả section</option>
           <?php foreach (($allSections[$filterCourseId] ?? []) as $sectionInfo): ?>
             <option value="<?php echo (int) ($sectionInfo['section_id'] ?? 0); ?>" <?php echo ((int) ($sectionInfo['section_id'] ?? 0) === $filterSectionId) ? 'selected' : ''; ?>>
               #<?php echo (int) ($sectionInfo['section_position'] ?? 0); ?> - <?php echo htmlspecialchars((string) ($sectionInfo['section_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
@@ -628,7 +628,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
       </div>
       <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl border-0 bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90">
         <i class="fas fa-filter"></i>
-        <span>Ap dung</span>
+        <span>Áp dụng</span>
       </button>
     </form>
   </section>
@@ -640,7 +640,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
 
       <div class="grid gap-4 md:grid-cols-2">
         <div>
-          <label for="create_course_id" class="mb-2 block text-sm font-bold text-slate-700">Khoa hoc</label>
+          <label for="create_course_id" class="mb-2 block text-sm font-bold text-slate-700">Khóa học</label>
           <select id="create_course_id" name="create_course_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" required>
             <?php foreach ($ownedCourses as $ownedCourse): ?>
               <option value="<?php echo (int) ($ownedCourse['course_id'] ?? 0); ?>" <?php echo ((int) ($ownedCourse['course_id'] ?? 0) === $createDefaultCourseId) ? 'selected' : ''; ?>>
@@ -683,11 +683,11 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
 
       <div class="grid gap-4 md:grid-cols-2">
         <div>
-          <label for="item_position" class="mb-2 block text-sm font-bold text-slate-700">Vi tri (tuỳ chon)</label>
+          <label for="item_position" class="mb-2 block text-sm font-bold text-slate-700">Vị trí (tùy chọn)</label>
           <input type="number" min="1" id="item_position" name="item_position" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" placeholder="De trong de tu dong xep cuoi">
         </div>
         <div>
-          <label for="content_status" class="mb-2 block text-sm font-bold text-slate-700">Trang thai item</label>
+          <label for="content_status" class="mb-2 block text-sm font-bold text-slate-700">Trạng thái item</label>
           <select id="content_status" name="content_status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10">
             <option value="draft">Draft</option>
             <option value="published">Published</option>
@@ -770,7 +770,7 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
             <th class="px-4 py-3 text-center font-bold">Status</th>
             <th class="px-4 py-3 text-center font-bold">Rule</th>
             <th class="px-4 py-3 text-left font-bold">Ref</th>
-            <th class="px-4 py-3 text-right font-bold">Thao tac</th>
+            <th class="px-4 py-3 text-right font-bold">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -828,12 +828,12 @@ if ($createDefaultSectionId <= 0 && isset($allSections[$createDefaultCourseId][0
                   ?>
                 </td>
                 <td class="px-4 py-4 text-right">
-                  <form method="post" class="m-0 inline-block" onsubmit="return confirm('Xoa learning item nay?');">
+                  <form method="post" class="m-0 inline-block" onsubmit="return confirm('Xóa learning item này?');">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="item_id" value="<?php echo (int) ($item['item_id'] ?? 0); ?>">
                     <button type="submit" name="delete_item" class="inline-flex items-center gap-1 rounded-lg border-0 bg-red-500 px-2.5 py-1.5 text-xs font-extrabold text-white transition hover:bg-red-600">
                       <i class="fas fa-trash"></i>
-                      <span>Xoa</span>
+                      <span>Xóa</span>
                     </button>
                   </form>
                 </td>

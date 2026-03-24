@@ -309,3 +309,6 @@ function isActive($page) {
         }
     })();
     </script>
+
+    <!-- Page content starts below fixed header -->
+    <div class="pt-16 sm:pt-20 min-h-screen flex flex-col">

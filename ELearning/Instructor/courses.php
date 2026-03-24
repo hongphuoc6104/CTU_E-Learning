@@ -1,6 +1,6 @@
 <?php
 
-define('TITLE', 'Quan ly khoa hoc');
+define('TITLE', 'Quản lý khóa học');
 define('PAGE', 'courses');
 
 require_once(__DIR__ . '/instructorInclude/header.php');
@@ -9,7 +9,7 @@ $instructorId = instructor_current_id();
 
 if (isset($_POST['submit_for_review'])) {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        instructor_set_flash('error', 'Phien gui bieu mau da het han.');
+        instructor_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn.');
         header('Location: courses.php');
         exit;
     }
@@ -24,7 +24,7 @@ if (isset($_POST['submit_for_review'])) {
 
     $status = (string) ($course['course_status'] ?? 'draft');
     if ($status !== 'draft') {
-        instructor_set_flash('warning', 'Chi khoa hoc dang o trang thai draft moi duoc gui duyet.');
+        instructor_set_flash('warning', 'Chỉ khóa học đang ở trạng thái draft mới được gửi duyệt.');
         header('Location: courses.php');
         exit;
     }
@@ -36,7 +36,7 @@ if (isset($_POST['submit_for_review'])) {
     if ($sectionCount <= 0 || $meaningfulItemCount <= 0) {
         instructor_set_flash(
             'error',
-            'Khong the gui duyet vi khoa hoc chua co noi dung y nghia. Vui long tao section va learning item truoc khi gui.'
+            'Không thể gửi duyệt vì khóa học chưa có nội dung ý nghĩa. Vui lòng tạo section và learning item trước khi gửi.'
         );
         header('Location: courses.php');
         exit;
@@ -44,7 +44,7 @@ if (isset($_POST['submit_for_review'])) {
 
     $submitStmt = $conn->prepare('UPDATE course SET course_status = \'pending_review\' WHERE course_id = ? AND instructor_id = ? AND is_deleted = 0');
     if (!$submitStmt) {
-        instructor_set_flash('error', 'Khong the cap nhat trang thai khoa hoc luc nay.');
+        instructor_set_flash('error', 'Không thể cập nhật trạng thái khóa học lúc này.');
         header('Location: courses.php');
         exit;
     }
@@ -54,9 +54,9 @@ if (isset($_POST['submit_for_review'])) {
     $submitStmt->close();
 
     if ($ok) {
-        instructor_set_flash('success', 'Khoa hoc da duoc gui vao pipeline review.');
+        instructor_set_flash('success', 'Khóa học đã được gửi vào pipeline review.');
     } else {
-        instructor_set_flash('error', 'Khong the gui duyet khoa hoc.');
+        instructor_set_flash('error', 'Không thể gửi duyệt khóa học.');
     }
 
     header('Location: courses.php');
@@ -114,8 +114,8 @@ if ($search !== '') {
 
 <section class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
   <div>
-    <h1 class="m-0 text-2xl font-black text-slate-900">Khoa hoc cua toi</h1>
-    <p class="m-0 mt-1 text-sm text-slate-500">Quan ly khoa hoc so huu, cap nhat noi dung va gui duyet.</p>
+    <h1 class="m-0 text-2xl font-black text-slate-900">Khóa học của tôi</h1>
+    <p class="m-0 mt-1 text-sm text-slate-500">Quản lý khoa hoc so huu, cap nhat noi dung va gui duyet.</p>
   </div>
   <a href="addCourse.php" class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white no-underline transition hover:bg-primary/90">
     <i class="fas fa-plus-circle"></i>
@@ -146,13 +146,13 @@ if ($search !== '') {
     <table class="w-full min-w-[920px] text-sm">
       <thead class="bg-slate-50 text-xs uppercase text-slate-500">
         <tr>
-          <th class="px-4 py-3 text-left font-bold">Khoa hoc</th>
-          <th class="px-4 py-3 text-left font-bold">Trang thai</th>
+          <th class="px-4 py-3 text-left font-bold">Khóa học</th>
+          <th class="px-4 py-3 text-left font-bold">Trạng thái</th>
           <th class="px-4 py-3 text-center font-bold">Sections</th>
           <th class="px-4 py-3 text-center font-bold">Items</th>
           <th class="px-4 py-3 text-center font-bold">Live</th>
           <th class="px-4 py-3 text-right font-bold">Gia</th>
-          <th class="px-4 py-3 text-right font-bold">Thao tac</th>
+          <th class="px-4 py-3 text-right font-bold">Thao tác</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
@@ -162,7 +162,7 @@ if ($search !== '') {
             <tr class="align-top">
               <td class="px-4 py-4">
                 <p class="m-0 max-w-[320px] truncate font-bold text-slate-800"><?php echo htmlspecialchars((string) ($course['course_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
-                <p class="m-0 mt-1 text-xs text-slate-500">Cap nhat: <?php echo htmlspecialchars((string) ($course['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
+                <p class="m-0 mt-1 text-xs text-slate-500">Cập nhật: <?php echo htmlspecialchars((string) ($course['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
                 <p class="m-0 mt-1 text-[11px] font-semibold uppercase text-slate-400">Loai: <?php echo htmlspecialchars((string) ($course['course_type'] ?? 'self_paced'), ENT_QUOTES, 'UTF-8'); ?></p>
               </td>
               <td class="px-4 py-4">
@@ -201,7 +201,7 @@ if ($search !== '') {
                       <input type="hidden" name="course_id" value="<?php echo (int) ($course['course_id'] ?? 0); ?>">
                       <button type="submit" name="submit_for_review" class="inline-flex items-center gap-1 rounded-lg border-0 bg-amber-500 px-2.5 py-1.5 text-xs font-extrabold text-white transition hover:bg-amber-600">
                         <i class="fas fa-paper-plane"></i>
-                        <span>Gui duyet</span>
+                        <span>Gửi duyệt</span>
                       </button>
                     </form>
                   <?php endif; ?>

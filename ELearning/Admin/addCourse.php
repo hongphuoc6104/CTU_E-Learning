@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 define('TITLE', 'Thêm khoá học');
 include('./adminInclude/header.php'); 
@@ -45,13 +46,20 @@ include('../dbConnection.php');
       } else if ($image_size > 2097152) { // 2MB
           $msg = ['type'=>'error', 'text'=>'Dung lượng ảnh lớn hơn mức cho phép (2MB).'];
       } else {
-        $filename = time() . '_' . basename($course_image);
-        $img_disk = __DIR__ . '/../image/courseimg/' . $filename;
-        $img_db   = 'image/courseimg/' . $filename;
+        $uploadResult = app_upload_store_file(
+          $course_image_temp,
+          $course_image,
+          __DIR__ . '/../image/courseimg/',
+          'image/courseimg',
+          'thư mục ảnh khóa học',
+          'course'
+        );
 
-        if(!move_uploaded_file($course_image_temp, $img_disk)) {
-          $msg = ['type'=>'error', 'text'=>'Không thể lưu ảnh khoá học.'];
+        if(!($uploadResult['ok'] ?? false)) {
+          $msg = ['type'=>'error', 'text'=>(string) ($uploadResult['message'] ?? 'Không thể lưu ảnh khoá học.')];
         } else {
+          $img_disk = (string) ($uploadResult['disk_path'] ?? '');
+          $img_db   = (string) ($uploadResult['db_path'] ?? '');
           $stmtInsert = $conn->prepare('INSERT INTO course (course_name, course_desc, course_author, course_img, course_duration, course_price, course_original_price, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, 0)');
           if($stmtInsert) {
             $stmtInsert->bind_param('sssssii', $course_name, $course_desc, $course_author, $img_db, $course_duration, $course_price, $course_original_price);

@@ -2,7 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 
-define('TITLE', 'Khoa hoc cua toi');
+define('TITLE', 'Khóa học của tôi');
 define('PAGE', 'mycourse');
 include('./stuInclude/header.php');
 include_once('../dbConnection.php');
@@ -99,9 +99,9 @@ if (isset($stuLogEmail)) {
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <div class="mb-6 sm:mb-8">
         <h1 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
-            <i class="fas fa-book-reader text-primary"></i> Khoa hoc cua toi
+            <i class="fas fa-book-reader text-primary"></i> Khóa học cua toi
         </h1>
-        <p class="text-sm sm:text-base text-slate-500 mt-2">Theo doi tien do hoc tap, tiep tuc bai tiep theo va hoan thanh khoa hoc cua ban.</p>
+        <p class="text-sm sm:text-base text-slate-500 mt-2">Theo dõi tiến độ học tập, tiếp tục bài tiếp theo và hoàn thành khóa học của bạn.</p>
     </div>
 
     <?php if (!empty($cards)): ?>
@@ -114,7 +114,7 @@ if (isset($stuLogEmail)) {
 
                 $courseId = (int) ($course['course_id'] ?? 0);
                 $imgSrc = '../' . ltrim(str_replace('../', '', (string) ($course['course_img'] ?? '')), '/');
-                $courseName = (string) ($course['course_name'] ?? 'Khoa hoc');
+                $courseName = (string) ($course['course_name'] ?? 'Khóa học');
                 $courseDesc = trim((string) ($course['course_desc'] ?? ''));
                 $courseDescShort = learning_text_preview($courseDesc, 150);
 
@@ -226,7 +226,7 @@ if (isset($stuLogEmail)) {
                             <?php elseif ($isCompletedCourse): ?>
                                 <div class="mt-3 text-xs text-emerald-700 flex items-center gap-2">
                                     <i class="fas fa-circle-check"></i>
-                                    <span class="font-semibold">Ban da hoan thanh cac muc bat buoc cua khoa hoc.</span>
+                                    <span class="font-semibold">Bạn đã hoàn thành các mục bắt buộc của khóa học.</span>
                                 </div>
                             <?php else: ?>
                                 <div class="mt-3 text-xs text-slate-500">Dang cap nhat learning item tiep theo.</div>
@@ -241,8 +241,8 @@ if (isset($stuLogEmail)) {
             <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i class="fas fa-book-open text-3xl text-primary/50"></i>
             </div>
-            <h2 class="text-xl font-bold text-slate-700 mb-2">Chua co khoa hoc nao</h2>
-            <p class="text-slate-400 mb-8">Hay kham pha va dang ky khoa hoc dau tien cua ban!</p>
+            <h2 class="text-xl font-bold text-slate-700 mb-2">Chưa có khóa học nào</h2>
+            <p class="text-slate-400 mb-8">Hãy khám phá và đăng ký khóa học đầu tiên của bạn!</p>
             <a href="../courses.php" class="px-8 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 inline-flex items-center gap-2">
                 <i class="fas fa-search"></i> Kham pha khoa hoc
             </a>

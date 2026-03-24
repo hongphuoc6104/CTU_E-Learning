@@ -3,10 +3,16 @@
 Standalone AI handoff file.
 
 Precondition:
-- Run this only after `ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md` is completed and verified green on `http://localhost/ELearning/`.
+- `docs/completed/active-executions/ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md` is complete and verified green on `http://localhost/ELearning/`.
 
 Objective:
 - Rerun the proof-related regression subset affected by the payment proof upload bug.
+
+Latest verification status:
+- despite earlier positive evidence, a direct recheck on the current runtime/database state still shows the target seed order `OM-20260318-0006` in `pending/pending`
+- the student order detail page does not yet show stable proof-upload completion evidence for this rerun lane on the current state
+
+Current status: OPEN.
 
 Do not do:
 - no code changes

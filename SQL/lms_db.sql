@@ -411,8 +411,8 @@ CREATE TABLE `session_attendance` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `admin` (`admin_id`, `admin_name`, `admin_email`, `admin_pass`) VALUES
-(1, 'CTU Super Admin', 'admin@gmail.com', '$2b$12$oX5cHFwtjgWIpUze110GQ.Uj9QnQlkQfyB1l3ND6ekPYGWMYpd3RK'),
-(2, 'Operations Admin', 'operations.admin@example.com', '$2b$12$oX5cHFwtjgWIpUze110GQ.Uj9QnQlkQfyB1l3ND6ekPYGWMYpd3RK');
+(1, 'CTU Super Admin', 'admin@gmail.com', '$2y$10$XStpqFohxB1yA./LJi7d3eaLWnnUi3eI5qgEVxJV7MAkU5JjeqDqW'),
+(2, 'Operations Admin', 'operations.admin@example.com', '$2y$10$XStpqFohxB1yA./LJi7d3eaLWnnUi3eI5qgEVxJV7MAkU5JjeqDqW');
 
 INSERT INTO `instructor` (`ins_id`, `ins_name`, `ins_email`, `ins_pass`, `ins_bio`, `ins_img`, `ins_status`) VALUES
 (1, 'Nguyễn Minh Châu', 'chau.instructor@example.com', '$2b$12$uXWj1c2zaNJOOl39MGoy5uHRQKvalNBs7BuDkfmEYHwuT7niouBNm', 'Chuyên gia UI/UX với hơn 8 năm làm sản phẩm SaaS và mentoring cho đội ngũ thiết kế trẻ.', 'image/stu/student2.jpg', 'active'),

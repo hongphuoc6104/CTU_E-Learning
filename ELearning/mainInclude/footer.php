@@ -1,3 +1,5 @@
+    </div><!-- /.pt-16 wrapper -->
+
 <!-- Pre-footer/Footer -->
 <footer id="Contact" class="mt-auto bg-slate-900 pt-20 text-slate-300">
   <div class="mx-auto grid max-w-7xl gap-16 px-6 pb-16 md:grid-cols-3">

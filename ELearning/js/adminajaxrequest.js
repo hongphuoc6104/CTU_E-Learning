@@ -25,6 +25,20 @@ async function postForm(url, payload) {
   }
 }
 
+function resolveAdminLoginEndpoint() {
+  if (typeof window.adminLoginEndpoint === 'string' && window.adminLoginEndpoint.trim() !== '') {
+    return window.adminLoginEndpoint;
+  }
+  return window.location.pathname.includes('/Admin/') ? 'admin.php' : 'Admin/admin.php';
+}
+
+function resolveAdminLoginSuccessRedirect() {
+  if (typeof window.adminLoginSuccessRedirect === 'string' && window.adminLoginSuccessRedirect.trim() !== '') {
+    return window.adminLoginSuccessRedirect;
+  }
+  return window.location.pathname.includes('/Admin/') ? 'adminDashboard.php' : 'Admin/adminDashboard.php';
+}
+
 function setAdminStatus(html) {
   const status = document.getElementById('statusAdminLogMsg');
   if (status) {
@@ -44,7 +58,7 @@ async function checkAdminLogin() {
   }
 
   try {
-    const data = await postForm('Admin/admin.php', {
+    const data = await postForm(resolveAdminLoginEndpoint(), {
       checkLogemail: 'checklogmail',
       adminLogEmail: adminLogEmail,
       adminLogPass: adminLogPass
@@ -58,7 +72,7 @@ async function checkAdminLogin() {
     setAdminStatus('<span class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">Đăng nhập thành công!</span>');
     clearAdminLoginField();
     window.setTimeout(() => {
-      window.location.href = 'Admin/adminDashboard.php';
+      window.location.href = resolveAdminLoginSuccessRedirect();
     }, 700);
   } catch (_error) {
     setAdminStatus('<span class="inline-flex rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600">Không thể kết nối tới máy chủ.</span>');

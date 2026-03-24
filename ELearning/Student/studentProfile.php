@@ -3,6 +3,7 @@ require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
 require_once(__DIR__ . '/../commerce_helpers.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 define('TITLE', 'Hồ sơ của tôi');
 define('PAGE', 'profile');
@@ -74,19 +75,25 @@ include('./stuInclude/header.php');
          'image/webp' => 'webp',
        ];
 
-       if(!isset($allowedTypes[$mimeType])) {
-         $passmsg = 'error:Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.';
-       } else {
-         $filename = bin2hex(random_bytes(16)) . '.' . $allowedTypes[$mimeType];
-         $imgDisk = __DIR__ . '/../image/stu/' . $filename;
-          if(!move_uploaded_file($tmpName, $imgDisk)) {
-            $passmsg = 'error:Không thể lưu ảnh đại diện.';
-          } else {
-            $newAvatarPath = 'image/stu/' . $filename;
-            $newAvatarDiskPath = $imgDisk;
-          }
-        }
-      }
+        if(!isset($allowedTypes[$mimeType])) {
+          $passmsg = 'error:Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.';
+        } else {
+          $uploadResult = app_upload_store_file(
+            $tmpName,
+            (string) ($uploadInfo['name'] ?? ('avatar.' . $allowedTypes[$mimeType])),
+            __DIR__ . '/../image/stu/',
+            'image/stu',
+            'thư mục avatar học viên',
+            'avatar'
+          );
+           if(!($uploadResult['ok'] ?? false)) {
+            $passmsg = 'error:' . (string) ($uploadResult['message'] ?? 'Không thể lưu ảnh đại diện.');
+           } else {
+             $newAvatarPath = (string) ($uploadResult['db_path'] ?? '');
+             $newAvatarDiskPath = (string) ($uploadResult['disk_path'] ?? '');
+           }
+         }
+       }
    }
 
     if(!isset($passmsg)) {

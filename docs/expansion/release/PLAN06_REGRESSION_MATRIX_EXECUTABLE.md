@@ -39,7 +39,7 @@ Purpose: provide an executable matrix for staged and final certification runs wi
 - [ ] Add course to cart (`ELearning/cart_api.php`).
 - [ ] Remove course from cart (`ELearning/Student/myCart.php`).
 - [ ] Create order from single course and from cart (`ELearning/checkout.php`).
-- [ ] Submit payment reference/proof (`ELearning/checkout_action.php`, `ELearning/Student/orderDetails.php`).
+- [x] Submit payment reference/proof (`ELearning/checkout_action.php`, `ELearning/Student/orderDetails.php`).
 - [ ] See order status transitions (`ELearning/Student/myOrders.php`).
 - [ ] Verify seeded pending/submitted payment records are visible and testable.
 
@@ -62,7 +62,7 @@ Purpose: provide an executable matrix for staged and final certification runs wi
 - [ ] Add learning item types (`ELearning/Instructor/learningItems.php`).
 - [ ] Add live session and replay (`ELearning/Instructor/liveSessions.php`).
 - [ ] Submit draft course for review (`ELearning/Instructor/courses.php`).
-- [ ] Verify seeded instructor-owned draft and pending-review courses exist.
+- [x] Verify seeded instructor-owned draft and pending-review courses exist.
 
 ### Admin
 
@@ -78,7 +78,7 @@ Purpose: provide an executable matrix for staged and final certification runs wi
 - [ ] All 10 required curated dataset categories exist after fresh import.
 - [ ] Seeded actors can login with documented credentials.
 - [ ] Seeded published courses visible publicly.
-- [ ] Seeded pending-review/draft courses appear only in operational views.
+- [x] Seeded pending-review/draft courses appear only in operational views.
 
 ## Technical Checks
 

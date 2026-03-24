@@ -137,30 +137,30 @@ if ($liveTimelineStmt) {
 
 <section class="mb-8 rounded-2xl bg-gradient-to-r from-primary to-slate-900 px-6 py-7 text-white shadow-xl shadow-primary/20">
   <p class="m-0 text-xs font-bold uppercase tracking-[0.2em] text-white/70">Instructor area</p>
-  <h1 class="m-0 mt-2 text-3xl font-black">Xin chao, <?php echo htmlspecialchars((string) ($instructorProfile['ins_name'] ?? 'Giang vien'), ENT_QUOTES, 'UTF-8'); ?></h1>
-  <p class="m-0 mt-2 text-sm text-white/80">Quan ly khoa hoc, noi dung va live session cua rieng ban.</p>
+  <h1 class="m-0 mt-2 text-3xl font-black">Xin chào, <?php echo htmlspecialchars((string) ($instructorProfile['ins_name'] ?? 'Giảng viên'), ENT_QUOTES, 'UTF-8'); ?></h1>
+  <p class="m-0 mt-2 text-sm text-white/80">Quản lý khóa học, nội dung và live session của riêng bạn.</p>
   <div class="mt-4 flex flex-wrap gap-2">
     <a href="addCourse.php" class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-primary no-underline transition hover:bg-slate-100">
       <i class="fas fa-plus-circle"></i>
-      <span>Tao khoa hoc draft</span>
+      <span>Tạo khóa học draft</span>
     </a>
     <a href="liveSessions.php" class="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2 text-xs font-bold text-white no-underline transition hover:bg-white/20">
       <i class="fas fa-video"></i>
-      <span>Quan ly live session</span>
+      <span>Quản lý live session</span>
     </a>
   </div>
 </section>
 
 <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Khoa hoc</p>
+    <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Khóa học</p>
     <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo $stats['total_courses']; ?></p>
-    <p class="m-0 mt-2 text-xs text-slate-500"><?php echo $stats['draft_courses']; ?> draft · <?php echo $stats['pending_courses']; ?> cho duyet</p>
+    <p class="m-0 mt-2 text-xs text-slate-500"><?php echo $stats['draft_courses']; ?> draft · <?php echo $stats['pending_courses']; ?> chờ duyệt</p>
   </article>
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Sections</p>
     <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo $stats['total_sections']; ?></p>
-    <p class="m-0 mt-2 text-xs text-slate-500">Tong section cua khoa hoc so huu</p>
+    <p class="m-0 mt-2 text-xs text-slate-500">Tổng section của khóa học sở hữu</p>
   </article>
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Learning items</p>
@@ -170,15 +170,15 @@ if ($liveTimelineStmt) {
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <p class="m-0 text-xs font-semibold uppercase tracking-wide text-slate-400">Live sessions</p>
     <p class="m-0 mt-2 text-3xl font-black text-slate-900"><?php echo $stats['scheduled_sessions'] + $stats['live_sessions'] + $stats['ended_sessions'] + $stats['replay_sessions']; ?></p>
-    <p class="m-0 mt-2 text-xs text-slate-500"><?php echo $stats['scheduled_sessions']; ?> sap dien ra · <?php echo $stats['replay_sessions']; ?> co replay</p>
+    <p class="m-0 mt-2 text-xs text-slate-500"><?php echo $stats['scheduled_sessions']; ?> sắp diễn ra · <?php echo $stats['replay_sessions']; ?> có replay</p>
   </article>
 </section>
 
 <section class="mt-6 grid gap-4 lg:grid-cols-2">
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div class="mb-4 flex items-center justify-between">
-      <h2 class="m-0 text-base font-black text-slate-800">Khoa hoc gan day</h2>
-      <a href="courses.php" class="text-xs font-bold text-primary hover:underline">Xem tat ca</a>
+      <h2 class="m-0 text-base font-black text-slate-800">Khóa học gần đây</h2>
+      <a href="courses.php" class="text-xs font-bold text-primary hover:underline">Xem tất cả</a>
     </div>
     <div class="space-y-3">
       <?php if (count($recentCourses) > 0): ?>
@@ -192,13 +192,13 @@ if ($liveTimelineStmt) {
               </span>
             </div>
             <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-              <span>Cap nhat: <?php echo htmlspecialchars((string) ($course['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
-              <a href="editCourse.php?id=<?php echo (int) ($course['course_id'] ?? 0); ?>" class="font-semibold text-primary hover:underline">Chinh sua</a>
+              <span>Cập nhật: <?php echo htmlspecialchars((string) ($course['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+              <a href="editCourse.php?id=<?php echo (int) ($course['course_id'] ?? 0); ?>" class="font-semibold text-primary hover:underline">Chỉnh sửa</a>
             </div>
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <p class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400">Ban chua tao khoa hoc nao.</p>
+        <p class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400">Bạn chưa tạo khóa học nào.</p>
       <?php endif; ?>
     </div>
   </article>
@@ -206,7 +206,7 @@ if ($liveTimelineStmt) {
   <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="m-0 text-base font-black text-slate-800">Live session timeline</h2>
-      <a href="liveSessions.php" class="text-xs font-bold text-primary hover:underline">Quan ly</a>
+      <a href="liveSessions.php" class="text-xs font-bold text-primary hover:underline">Quản lý</a>
     </div>
     <div class="space-y-3">
       <?php if (count($liveTimeline) > 0): ?>
@@ -224,7 +224,7 @@ if ($liveTimelineStmt) {
           </div>
         <?php endforeach; ?>
       <?php else: ?>
-        <p class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400">Chua co live session nao duoc tao.</p>
+        <p class="m-0 rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400">Chưa có live session nào được tạo.</p>
       <?php endif; ?>
     </div>
   </article>

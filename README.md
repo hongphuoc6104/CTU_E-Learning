@@ -89,6 +89,31 @@ Hệ thống cần biết mật khẩu MySQL của máy bạn để kết nối.
 - Mặc định XAMPP **không có mật khẩu** MySQL. File `dbConnection.php` đã được set sẵn `$db_password = "";`, nên thường bạn **không cần sửa gì**.
 - *Nếu máy bạn có cài pass MySQL riêng, hãy mở file đó lên và sửa.*
 
+### Bước 4.1: Kiểm tra quyền ghi cho các thư mục upload
+Để website chạy ổn trên **Windows + XAMPP** khi chuyển qua máy khác, bạn cần đảm bảo Apache có thể ghi file mới vào các thư mục upload công khai sau:
+
+- `ELearning/image/courseimg/`  → ảnh khoá học
+- `ELearning/image/stu/` → avatar học viên
+- `ELearning/image/paymentproof/` → minh chứng thanh toán
+- `ELearning/lessonvid/` → video bài học upload trực tiếp
+
+Ghi chú quan trọng:
+
+- Dự án đã có cơ chế **tự tạo thư mục nếu thiếu** và **kiểm tra quyền ghi trước khi upload**.
+- Trên **Windows + XAMPP**, nếu bạn giải nén/copy project trong thư mục `htdocs` của user đang chạy XAMPP thì thường không cần chỉnh thêm quyền thủ công.
+- Nếu upload vẫn lỗi, hãy kiểm tra:
+  - thư mục có thật sự tồn tại không
+  - file có đang bị Windows chặn quyền ghi không
+  - Apache/XAMPP có đang chạy bằng user có quyền ghi vào `htdocs` hay không
+
+Mục tiêu cuối cùng là khi chuyển dự án sang máy Windows khác, các luồng sau vẫn phải hoạt động bình thường:
+
+- upload ảnh khoá học
+- upload avatar học viên
+- upload minh chứng thanh toán
+- upload video bài học
+- tạo dữ liệu mới và ghi thành công vào MySQL
+
 ### Bước 5: Chạy dự án!
 Bây giờ mọi thứ đã sẵn sàng:
 - **Trang chủ học viên**: Truy cập vào `http://localhost/ELearning/`
@@ -187,6 +212,7 @@ Một trong những phần dễ lỗi nhất của dự án là đường dẫn 
 1. Khi Admin thêm hình Khoá học, file gốc sẽ được copy bằng PHP (`move_uploaded_file`) vào thư mục vật lý hệ thống: `ELearning/image/courseimg/tên_file_mới.jpg`
 2. Tương tự, Học viên tải Avatar sẽ vào: `ELearning/image/stu/tên_file_mới.jpg`
 3. Đường dẫn lưu vào Database là **đường dẫn tương đối từ gốc ELearning**: `image/courseimg/tên_file.jpg`. Điều này giúp hệ thống không bị lỗi file khi bưng code từ máy này sang máy khác.
+4. Với các luồng upload mới hơn, hệ thống sẽ kiểm tra sẵn khả năng ghi thư mục trước khi gọi `move_uploaded_file()` để giảm lỗi khi deploy qua máy Windows/XAMPP khác.
 
 ---
 

@@ -3,6 +3,7 @@ include('./dbConnection.php');
 require_once(__DIR__ . '/session_bootstrap.php');
 require_once(__DIR__ . '/commerce_helpers.php');
 require_once(__DIR__ . '/csrf.php');
+require_once(__DIR__ . '/upload_helpers.php');
 secure_session_start();
 
 if (!isset($_SESSION['stuLogEmail'])) {
@@ -119,26 +120,24 @@ if ($hasProofUpload) {
         exit;
     }
 
-    $safeFileName = 'proof_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $proofExt;
     $uploadDir = __DIR__ . '/image/paymentproof/';
-    $newProofDiskPath = $uploadDir . $safeFileName;
-    $newProofDbPath = 'image/paymentproof/' . $safeFileName;
+    $uploadResult = app_upload_store_file(
+        $proofTmpName,
+        $proofName,
+        $uploadDir,
+        'image/paymentproof',
+        'thu muc minh chung thanh toan',
+        'proof'
+    );
 
-    // Pre-flight: ensure upload directory exists and is writable by web server
-    if (!is_dir($uploadDir)) {
-        @mkdir($uploadDir, 0775, true);
-    }
-    if (!is_writable($uploadDir)) {
-        commerce_set_flash('error', 'Thư mục lưu minh chứng chưa được cấp quyền ghi. Vui lòng liên hệ quản trị viên.');
+    if (!($uploadResult['ok'] ?? false)) {
+        commerce_set_flash('error', (string) ($uploadResult['message'] ?? 'Không thể lưu minh chứng thanh toán.'));
         header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
         exit;
     }
 
-    if (!move_uploaded_file($proofTmpName, $newProofDiskPath)) {
-        commerce_set_flash('error', 'Không thể lưu minh chứng thanh toán. Vui lòng thử lại.');
-        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
-        exit;
-    }
+    $newProofDiskPath = (string) ($uploadResult['disk_path'] ?? '');
+    $newProofDbPath = (string) ($uploadResult['db_path'] ?? '');
 }
 
 $finalReference = $paymentReference !== ''

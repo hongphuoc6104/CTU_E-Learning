@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
+require_once(__DIR__ . '/../upload_helpers.php');
 
 define('TITLE', 'Thêm bài học');
 define('PAGE', 'lessons');
@@ -36,13 +37,19 @@ if(isset($_POST['addLessonBtn'])){
             } elseif ($_FILES['lesson_video']['size'] > 500 * 1024 * 1024) { // 500MB
                 $msg = ['type'=>'error', 'text'=>'Dung lượng video quá lớn (tối đa 500MB).'];
             } else {
-                $filename    = time() . '_' . basename($_FILES['lesson_video']['name']);
-                $upload_path = __DIR__ . '/../lessonvid/' . $filename;
-                if(move_uploaded_file($_FILES['lesson_video']['tmp_name'], $upload_path)) {
-                    $lesson_link = '../lessonvid/' . $filename;
-                    $uploadedVideoDiskPath = $upload_path;
+                $uploadResult = app_upload_store_file(
+                    (string) $_FILES['lesson_video']['tmp_name'],
+                    (string) $_FILES['lesson_video']['name'],
+                    __DIR__ . '/../lessonvid/',
+                    '../lessonvid',
+                    'thu muc video bai hoc',
+                    'lesson'
+                );
+                if(($uploadResult['ok'] ?? false)) {
+                    $lesson_link = (string) ($uploadResult['db_path'] ?? '');
+                    $uploadedVideoDiskPath = (string) ($uploadResult['disk_path'] ?? '');
                 } else {
-                    $msg = ['type'=>'error', 'text'=>'Không thể lưu file video. Kiểm tra quyền ghi thư mục lessonvid/.'];
+                    $msg = ['type'=>'error', 'text'=>(string) ($uploadResult['message'] ?? 'Không thể lưu file video. Kiểm tra quyền ghi thư mục lessonvid/.')];
                 }
             }
         } elseif ($mode === 'link') {
