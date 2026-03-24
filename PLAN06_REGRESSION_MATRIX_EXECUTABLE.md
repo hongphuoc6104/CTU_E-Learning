@@ -70,7 +70,7 @@ Purpose: provide an executable matrix for staged and final certification runs wi
 - [ ] Review pending course queue (`ELearning/Admin/courseReview.php`).
 - [ ] Verify payment and see enrollment creation result (`ELearning/Admin/payments.php`).
 - [ ] Reporting pages render (`ELearning/Admin/adminDashboard.php`, `ELearning/Admin/sellReport.php`).
-- [ ] Manage instructors page accessible (BLOCKER if missing `ELearning/Admin/instructors.php`).
+- [ ] Manage instructors page accessible (`ELearning/Admin/instructors.php`).
 - [ ] Verify seeded order/payment state diversity is visible in admin screens.
 
 ### Seed Integrity

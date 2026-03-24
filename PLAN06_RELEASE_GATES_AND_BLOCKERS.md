@@ -67,7 +67,7 @@ Impact:
 
 ## Exit Criteria To Remove Blocked State
 
-1. Plan 05 delivers missing admin pages and operations coverage.
+1. Plan 05 delivers stabilized admin operations coverage and signoff.
 2. Reporting alignment decision is implemented and regression-tested.
 3. Seed data gap for enrollment-state diversity is resolved.
 4. Full regression matrix passes on fresh import.
