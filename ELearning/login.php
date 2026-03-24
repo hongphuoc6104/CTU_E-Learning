@@ -1,5 +1,9 @@
 <?php 
   include('./dbConnection.php');
+  $redirectTarget = trim((string) ($_GET['redirect'] ?? ''));
+  if ($redirectTarget !== '' && (str_contains($redirectTarget, '://') || str_starts_with($redirectTarget, '//') || str_contains($redirectTarget, "\n") || str_contains($redirectTarget, "\r"))) {
+      $redirectTarget = '';
+  }
   // Header Include from mainInclude 
   include('./mainInclude/header.php'); 
 ?>
@@ -18,6 +22,7 @@
         <div class="bg-white shadow-xl rounded-2xl p-10 border border-slate-100">
           <h5 class="mb-8 text-2xl font-black text-primary text-center flex justify-center items-center gap-3"><i class="fas fa-sign-in-alt"></i> Đăng nhập</h5>
           <form role="form" id="stuLoginForm" class="space-y-6">
+            <input type="hidden" id="stuLoginRedirect" value="<?php echo htmlspecialchars($redirectTarget, ENT_QUOTES, 'UTF-8'); ?>">
             <div>
               <label for="stuLogEmail" class="block text-sm font-semibold text-slate-700 mb-2">
                 <i class="fas fa-envelope text-slate-400 mr-1"></i> Email
@@ -40,8 +45,8 @@
           </div>
           <div class="text-center mt-6 pt-6 border-t border-slate-100">
               <span class="text-slate-600 text-sm">Chưa có tài khoản? </span>
-              <a href="signup.php" class="text-primary font-bold hover:underline text-sm">Đăng ký ngay</a>
-          </div>
+              <a href="signup.php<?php echo $redirectTarget !== '' ? '?redirect=' . rawurlencode($redirectTarget) : ''; ?>" class="text-primary font-bold hover:underline text-sm">Đăng ký ngay</a>
+           </div>
         </div>
       </div>
      </div>

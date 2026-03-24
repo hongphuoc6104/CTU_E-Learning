@@ -167,10 +167,12 @@
     const nameInput = document.getElementById('stuname');
     const emailInput = document.getElementById('stuemail');
     const passInput = document.getElementById('stupass');
+    const signupRedirectInput = document.getElementById('stuSignupRedirect');
 
     const stuname = nameInput ? nameInput.value.trim() : '';
     const stuemail = emailInput ? emailInput.value.trim() : '';
     const stupass = passInput ? passInput.value : '';
+    const redirectTarget = signupRedirectInput ? signupRedirectInput.value.trim() : '';
 
     if (stuname === '') {
       setHtml('statusMsg1', '<small class="text-red-500">Nhập Họ Tên!</small>');
@@ -200,7 +202,7 @@
         );
         clearStuRegField();
         window.setTimeout(() => {
-          window.location.href = 'login.php';
+          window.location.href = redirectTarget ? ('login.php?redirect=' + encodeURIComponent(redirectTarget)) : 'login.php';
         }, 1200);
       } else {
         setHtml(
@@ -221,8 +223,10 @@
   async function checkStuLogin() {
     const emailInput = document.getElementById('stuLogEmail');
     const passInput = document.getElementById('stuLogPass');
+    const loginRedirectInput = document.getElementById('stuLoginRedirect');
     const stuLogEmail = emailInput ? emailInput.value.trim() : '';
     const stuLogPass = passInput ? passInput.value : '';
+    const redirectTarget = loginRedirectInput ? loginRedirectInput.value.trim() : '';
 
     try {
       const data = await postForm('Student/addstudent.php', {
@@ -242,7 +246,7 @@
           '<small class="inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700">Đăng nhập thành công, đang chuyển hướng...</small>'
         );
         window.setTimeout(() => {
-          window.location.href = 'index.php';
+          window.location.href = redirectTarget || 'index.php';
         }, 900);
       }
     } catch (_error) {

@@ -1,6 +1,7 @@
 <?php
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
+require_once(__DIR__ . '/../commerce_helpers.php');
 
 define('TITLE', 'Giỏ hàng');
 define('PAGE', 'myCart');
@@ -11,6 +12,14 @@ if(!isset($_SESSION['is_login'])){
   echo "<script> location.href='../index.php'; </script>";
 }
 $stuEmail = $_SESSION['stuLogEmail'];
+$studentId = commerce_get_student_id($conn, $stuEmail);
+if ($studentId === null) {
+    commerce_set_flash('error', 'Không tìm thấy thông tin học viên để tải giỏ hàng.');
+    echo "<script> location.href='../index.php'; </script>";
+    exit;
+}
+commerce_cleanup_cart($conn, $stuEmail);
+$commerceFlash = commerce_pull_flash();
 ?>
 
 <div class="max-w-4xl mx-auto px-6 py-12">
@@ -22,16 +31,27 @@ $stuEmail = $_SESSION['stuLogEmail'];
         <p class="text-slate-500 mt-2">Kiểm tra lại các khóa học trước khi thanh toán.</p>
     </div>
 
+    <?php if($commerceFlash): ?>
+    <div class="mb-6 flex items-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold <?php echo ($commerceFlash['type'] ?? '') === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'; ?>">
+        <i class="fas <?php echo ($commerceFlash['type'] ?? '') === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+        <span><?php echo htmlspecialchars((string) ($commerceFlash['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+    </div>
+    <?php endif; ?>
+
     <?php 
     $stmtCart = $conn->prepare(
         'SELECT c.cart_id, course.course_id, course.course_name, course.course_price, course.course_original_price, course.course_img '
         . 'FROM cart c '
         . 'JOIN course ON c.course_id = course.course_id '
-        . 'WHERE c.stu_email = ? AND c.is_deleted = 0 AND course.is_deleted = 0'
+        . 'LEFT JOIN enrollment e ON e.student_id = ? AND e.course_id = course.course_id AND e.enrollment_status = ? '
+        . 'WHERE c.stu_email = ? AND c.is_deleted = 0 AND course.is_deleted = 0 AND course.course_status = ? AND e.enrollment_id IS NULL '
+        . 'ORDER BY c.cart_id ASC'
     );
     $result = false;
     if($stmtCart) {
-        $stmtCart->bind_param('s', $stuEmail);
+        $activeStatus = 'active';
+        $publishedStatus = 'published';
+        $stmtCart->bind_param('isss', $studentId, $activeStatus, $stuEmail, $publishedStatus);
         $stmtCart->execute();
         $result = $stmtCart->get_result();
     }
@@ -82,10 +102,14 @@ $stuEmail = $_SESSION['stuLogEmail'];
                     <p class="text-3xl font-black text-primary mt-1"><?php echo number_format($total); ?> <span class="text-xl">đ</span></p>
                 </div>
                 <div class="text-right">
+                    <a href="myOrders.php" class="text-sm text-slate-500 hover:text-primary transition-colors flex items-center gap-1 justify-end mb-3">
+                        <i class="fas fa-receipt text-xs"></i> Xem đơn hàng của tôi
+                    </a>
                     <a href="../courses.php" class="text-sm text-slate-500 hover:text-primary transition-colors flex items-center gap-1 justify-end mb-3">
                         <i class="fas fa-plus text-xs"></i> Thêm khóa học
                     </a>
                     <form action="../checkout.php" method="post">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                         <input type="hidden" name="checkout_type" value="cart">
                         <button type="submit" 
                                 class="px-8 py-3.5 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">

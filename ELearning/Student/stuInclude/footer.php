@@ -1,22 +1,9 @@
 <?php
-// Cập nhật số đếm giỏ hàng
+require_once(__DIR__ . '/../../commerce_helpers.php');
+
 if(isset($_SESSION['is_login'])) {
     $stuLogEmail = $_SESSION['stuLogEmail'];
-    $cart_count = 0;
-    $cartStmt = $conn->prepare(
-        'SELECT COUNT(*) as cnt '
-        . 'FROM cart c '
-        . 'INNER JOIN course co ON co.course_id = c.course_id '
-        . 'WHERE c.stu_email = ? AND c.is_deleted = 0 AND co.is_deleted = 0'
-    );
-    if ($cartStmt) {
-        $cartStmt->bind_param('s', $stuLogEmail);
-        $cartStmt->execute();
-        $cartRes = $cartStmt->get_result();
-        $cartRow = $cartRes ? $cartRes->fetch_assoc() : null;
-        $cart_count = isset($cartRow['cnt']) ? (int) $cartRow['cnt'] : 0;
-        $cartStmt->close();
-    }
+    $cart_count = commerce_get_cart_count($conn, $stuLogEmail);
 } else {
     $cart_count = 0;
 }

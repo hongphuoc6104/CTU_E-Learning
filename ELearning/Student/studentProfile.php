@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
+require_once(__DIR__ . '/../commerce_helpers.php');
 
 define('TITLE', 'Hồ sơ của tôi');
 define('PAGE', 'profile');
@@ -141,13 +142,14 @@ include('./stuInclude/header.php');
 // Fetch owned courses
 $my_courses_result = false;
 $myCoursesStmt = $conn->prepare(
-  'SELECT c.*, co.order_date FROM courseorder co '
-  . 'JOIN course c ON co.course_id = c.course_id '
-  . "WHERE co.stu_email = ? AND co.status = 'TXN_SUCCESS' AND co.is_deleted = 0 "
-  . 'ORDER BY co.order_date DESC'
+  'SELECT c.*, e.granted_at, e.progress_percent FROM enrollment e '
+  . 'JOIN course c ON e.course_id = c.course_id '
+  . 'WHERE e.student_id = ? AND e.enrollment_status = ? AND c.is_deleted = 0 '
+  . 'ORDER BY e.granted_at DESC'
 );
 if($myCoursesStmt) {
-  $myCoursesStmt->bind_param('s', $stuEmail);
+  $activeStatus = 'active';
+  $myCoursesStmt->bind_param('is', $stuId, $activeStatus);
   $myCoursesStmt->execute();
   $my_courses_result = $myCoursesStmt->get_result();
 }
@@ -187,9 +189,14 @@ if($myFeedbackStmt) {
                 </p>
             </div>
             <!-- Cart button -->
-            <a href="myCart.php" class="px-5 py-2.5 border-2 border-primary text-primary text-sm font-bold rounded-xl hover:bg-primary hover:text-white transition-all flex items-center gap-2 self-end mb-1">
+            <div class="flex flex-wrap items-center gap-3 self-end mb-1">
+            <a href="myOrders.php" class="px-5 py-2.5 border-2 border-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:border-primary hover:text-primary transition-all flex items-center gap-2">
+                <i class="fas fa-receipt"></i> Đơn hàng
+            </a>
+            <a href="myCart.php" class="px-5 py-2.5 border-2 border-primary text-primary text-sm font-bold rounded-xl hover:bg-primary hover:text-white transition-all flex items-center gap-2">
                 <i class="fas fa-shopping-cart"></i> Giỏ hàng
             </a>
+            </div>
         </div>
     </div>
 
@@ -302,7 +309,8 @@ if($myFeedbackStmt) {
                     </a>
                     <div class="p-4">
                         <h3 class="font-bold text-slate-900 text-sm line-clamp-2 mb-2"><?php echo htmlspecialchars($c['course_name']); ?></h3>
-                        <p class="text-xs text-slate-400 mb-3"><i class="fas fa-calendar-alt mr-1"></i><?php echo $c['order_date']; ?></p>
+                        <p class="text-xs text-slate-400 mb-2"><i class="fas fa-calendar-alt mr-1"></i><?php echo date('d/m/Y', strtotime((string) $c['granted_at'])); ?></p>
+                        <p class="text-xs text-slate-500 mb-3"><i class="fas fa-chart-line mr-1 text-primary"></i>Tiến độ: <?php echo number_format((float) ($c['progress_percent'] ?? 0), 0); ?>%</p>
                         <a href="watchcourse.php?course_id=<?php echo $c['course_id']; ?>" 
                            class="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary/90 transition-all">
                             <i class="fas fa-play-circle"></i> Học ngay

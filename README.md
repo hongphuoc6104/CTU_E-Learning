@@ -113,12 +113,22 @@ File output chính là: `ELearning/css/tailwind.css`.
 
 ## 🔑 Tài khoản đăng nhập mẫu
 
-Thay vì phải tạo lại từ đầu, bạn có thể dùng các tài khoản đã có sẵn trong cơ sở dữ liệu để test:
+Thay vì phải tạo lại từ đầu, bạn có thể dùng các tài khoản đã có sẵn trong cơ sở dữ liệu để test. Seed mặc định trong `SQL/lms_db.sql` hiện bao gồm các nhóm dữ liệu cho published course, blended/live course, draft, pending review, cart chưa thanh toán, order chờ xác minh, order failed/cancelled và học viên đang học dở/đã hoàn thành:
 
 | Vai trò | Email đăng nhập | Mật khẩu | Chức năng |
 |---|---|---|---|
-| **Quản trị viên** | `admin@gmail.com` | `admin` | Toàn quyền thêm, sửa, xoá khoá học, xem doanh thu... |
-| **Học viên mẫu** | `cap@example.com` | `123456` | Có sẵn các khoá học đã mua, dùng để test xem video. |
+| **Quản trị viên** | `admin@gmail.com` | `admin` | Tài khoản admin chính để kiểm tra dashboard, quản lý khóa học và dữ liệu mẫu commerce. |
+| **Quản trị viên** | `operations.admin@example.com` | `admin` | Tài khoản admin phụ, phù hợp để test luồng xác minh thanh toán thủ công ở các plan sau. |
+| **Instructor seed** | `chau.instructor@example.com` | `instructor123` | Giảng viên sở hữu khóa Figma đã published và một phần nội dung chờ review. |
+| **Instructor seed** | `long.live@example.com` | `instructor123` | Giảng viên phụ trách khóa blended/live có live session và replay. |
+| **Instructor seed** | `ngoc.creator@example.com` | `instructor123` | Giảng viên có khóa draft và các khóa self-paced phục vụ demo seed data. |
+| **Học viên mẫu** | `cap@example.com` | `123456` | Đã thanh toán khóa Figma, đang học dở và có tiến độ từng learning item. |
+| **Học viên mẫu** | `hoan.thanh@example.com` | `123456` | Đã hoàn thành khóa blended/live, có quiz attempt pass và replay history. |
+| **Học viên mẫu** | `lan.cart@example.com` | `123456` | Có cart chưa thanh toán và pending order để test case unpaid. |
+| **Học viên mẫu** | `xacminh.pay@example.com` | `123456` | Có order ở trạng thái `awaiting_verification` và payment `submitted`. |
+| **Học viên mẫu** | `rejected.order@example.com` | `123456` | Có order failed/rejected và một order cancelled để test vòng đời commerce. |
+| **Học viên mẫu** | `thao.live@example.com` | `123456` | Đã mua khóa live bootcamp, có enrollment và attendance dữ liệu mẫu. |
+| **Học viên mẫu** | `thanh.multi@example.com` | `123456` | Đã mua nhiều khóa trong một order để test multi-course enrollment. |
 
 ---
 

@@ -1,6 +1,8 @@
 <?php
 include('./dbConnection.php');
 require_once(__DIR__ . '/session_bootstrap.php');
+require_once(__DIR__ . '/commerce_helpers.php');
+require_once(__DIR__ . '/csrf.php');
 secure_session_start();
 
 if (!isset($_SESSION['stuLogEmail'])) {
@@ -8,237 +10,193 @@ if (!isset($_SESSION['stuLogEmail'])) {
     exit;
 }
 
-$stuEmail = (string) $_SESSION['stuLogEmail'];
-$success = false;
-$resultMessage = 'Đơn chờ thanh toán đã hết hạn hoặc dữ liệu không hợp lệ. Vui lòng thử lại.';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pendingToken = (string) ($_POST['pending_token'] ?? '');
-    $pendingOrder = $_SESSION['pending_checkout'] ?? null;
-
-    $isPendingValid = is_array($pendingOrder)
-        && isset($pendingOrder['token'])
-        && hash_equals((string) $pendingOrder['token'], $pendingToken)
-        && isset($pendingOrder['stu_email'])
-        && hash_equals((string) $pendingOrder['stu_email'], $stuEmail)
-        && isset($pendingOrder['created_at'])
-        && (time() - (int) $pendingOrder['created_at'] <= 900);
-
-    if ($isPendingValid) {
-        $checkoutType = (string) ($pendingOrder['checkout_type'] ?? '');
-        $courseIds = array_values(array_unique(array_map('intval', $pendingOrder['course_ids'] ?? [])));
-
-        if (($checkoutType === 'single' || $checkoutType === 'cart') && !empty($courseIds)) {
-            $status = 'TXN_SUCCESS';
-            $respmsg = 'Txn Success';
-            $qrData = trim((string) ($_POST['QR_DATA'] ?? ''));
-            if ($qrData !== '') {
-                $qrData = str_replace(["\r", "\n"], ' ', $qrData);
-                $qrData = substr($qrData, 0, 200);
-                $respmsg = 'QR: ' . $qrData . ' | Txn Success';
-            }
-
-            $date = date('Y-m-d');
-            $baseOrderRef = preg_replace('/[^A-Za-z0-9\-]/', '', (string) ($pendingOrder['order_reference'] ?? ''));
-            if ($baseOrderRef === '') {
-                $baseOrderRef = 'ORDS' . random_int(100000, 99999999);
-            }
-
-            $courseStmt = $conn->prepare('SELECT course_price FROM course WHERE course_id = ? AND is_deleted = 0 LIMIT 1');
-            $ownedStmt = $conn->prepare('SELECT 1 FROM courseorder WHERE stu_email = ? AND course_id = ? AND status = ? AND is_deleted = 0 LIMIT 1');
-            $insertStmt = $conn->prepare('INSERT INTO courseorder (order_id, stu_email, course_id, status, respmsg, amount, order_date) VALUES (?, ?, ?, ?, ?, ?, ?)');
-
-            $cartExistsStmt = null;
-            $cartSoftDeleteStmt = null;
-            if ($checkoutType === 'cart') {
-                $cartExistsStmt = $conn->prepare('SELECT 1 FROM cart WHERE stu_email = ? AND course_id = ? AND is_deleted = 0 LIMIT 1');
-                $cartSoftDeleteStmt = $conn->prepare('UPDATE cart SET is_deleted = 1 WHERE stu_email = ? AND course_id = ? AND is_deleted = 0');
-            }
-
-            if ($courseStmt && $ownedStmt && $insertStmt && ($checkoutType !== 'cart' || ($cartExistsStmt && $cartSoftDeleteStmt))) {
-                $conn->begin_transaction();
-                $dbError = false;
-                $processableCount = 0;
-                $alreadyOwnedCount = 0;
-                $insertedCount = 0;
-
-                foreach ($courseIds as $idx => $courseId) {
-                    if ($courseId <= 0) {
-                        continue;
-                    }
-
-                    if ($checkoutType === 'cart') {
-                        $cartExistsStmt->bind_param('si', $stuEmail, $courseId);
-                        if (!$cartExistsStmt->execute()) {
-                            $dbError = true;
-                            break;
-                        }
-
-                        $cartExistsStmt->store_result();
-                        $isInCart = $cartExistsStmt->num_rows > 0;
-                        $cartExistsStmt->free_result();
-                        if (!$isInCart) {
-                            continue;
-                        }
-                    }
-
-                    $courseStmt->bind_param('i', $courseId);
-                    if (!$courseStmt->execute()) {
-                        $dbError = true;
-                        break;
-                    }
-
-                    $courseResult = $courseStmt->get_result();
-                    $courseRow = $courseResult ? $courseResult->fetch_assoc() : null;
-                    if (!$courseRow) {
-                        continue;
-                    }
-
-                    $processableCount++;
-                    $courseAmount = (int) $courseRow['course_price'];
-
-                    $ownedStmt->bind_param('sis', $stuEmail, $courseId, $status);
-                    if (!$ownedStmt->execute()) {
-                        $dbError = true;
-                        break;
-                    }
-
-                    $ownedStmt->store_result();
-                    $isOwned = $ownedStmt->num_rows > 0;
-                    $ownedStmt->free_result();
-
-                    if ($isOwned) {
-                        $alreadyOwnedCount++;
-                        if ($checkoutType === 'cart') {
-                            $cartSoftDeleteStmt->bind_param('si', $stuEmail, $courseId);
-                            if (!$cartSoftDeleteStmt->execute()) {
-                                $dbError = true;
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-
-                    $orderId = $checkoutType === 'cart' ? $baseOrderRef . '-' . ($idx + 1) : $baseOrderRef;
-                    $insertStmt->bind_param('ssissis', $orderId, $stuEmail, $courseId, $status, $respmsg, $courseAmount, $date);
-                    if (!$insertStmt->execute()) {
-                        $dbError = true;
-                        break;
-                    }
-
-                    $insertedCount++;
-
-                    if ($checkoutType === 'cart') {
-                        $cartSoftDeleteStmt->bind_param('si', $stuEmail, $courseId);
-                        if (!$cartSoftDeleteStmt->execute()) {
-                            $dbError = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!$dbError && $processableCount > 0 && ($insertedCount > 0 || $alreadyOwnedCount === $processableCount)) {
-                    $conn->commit();
-                    $success = true;
-                    if ($insertedCount > 0 && $alreadyOwnedCount > 0) {
-                        $resultMessage = 'Một phần giao dịch đã được thêm thành công. Các khoá học đã sở hữu trước đó được tự động bỏ qua.';
-                    } elseif ($insertedCount > 0) {
-                        $resultMessage = 'Khóa học đã được thêm vào tài khoản của bạn. Đang tự động chuyển hướng...';
-                    } elseif ($insertedCount === 0 && $alreadyOwnedCount === $processableCount) {
-                        $resultMessage = 'Bạn đã sở hữu tất cả khoá học trong giao dịch này. Không có khoá học mới được thêm.';
-                    }
-                } else {
-                    $conn->rollback();
-                    if ($dbError) {
-                        $resultMessage = 'Có lỗi hệ thống khi xử lý giao dịch. Vui lòng thử lại.';
-                    } elseif ($processableCount === 0) {
-                        $resultMessage = 'Không có khoá học hợp lệ để thanh toán. Vui lòng kiểm tra lại giỏ hàng.';
-                    } else {
-                        $resultMessage = 'Không thể hoàn tất giao dịch do dữ liệu đã thay đổi. Vui lòng thử lại.';
-                    }
-                }
-
-                $courseStmt->close();
-                $ownedStmt->close();
-                $insertStmt->close();
-                if ($cartExistsStmt) {
-                    $cartExistsStmt->close();
-                }
-                if ($cartSoftDeleteStmt) {
-                    $cartSoftDeleteStmt->close();
-                }
-            }
-        }
-    }
-
-    unset($_SESSION['pending_checkout']);
-}
-
-if ($success) {
-    echo '<!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Thanh Toán Thành Công</title>
-          <link rel="stylesheet" href="css/tailwind.css">
-          <link rel="stylesheet" href="css/all.min.css">
-          <style>
-              body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-              .success-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; transform: scale(0.9); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-              @keyframes popIn { 100% { transform: scale(1); } }
-              .success-icon { display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background-color: #e8f5e9; color: #28a745; border-radius: 50%; font-size: 40px; margin-bottom: 20px; animation: checkmark 0.8s ease-in-out forwards; }
-              @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-              h4 { color: #343a40; font-weight: 600; margin-bottom: 10px; }
-              p { color: #6c757d; font-size: 15px; margin-bottom: 20px; }
-              .loader { border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-              .success-link { display: inline-flex; margin-top: 16px; padding: 10px 16px; border-radius: 12px; background: #003366; color: #fff; text-decoration: none; font-weight: 600; }
-          </style>
-      </head>
-      <body>
-          <div class="success-card">
-              <div class="success-icon">
-                  <i class="fas fa-check"></i>
-              </div>
-              <h4>Thanh toán hợp lệ!</h4>
-          <p>' . htmlspecialchars($resultMessage, ENT_QUOTES, 'UTF-8') . '</p>
-              <div class="loader"></div>
-              <a class="success-link" href="./Student/myCourse.php">Đến khoá học của tôi</a>
-          </div>
-          <script>
-              setTimeout(() => {
-                  window.location.href = "./Student/myCourse.php";
-              }, 3000);
-          </script>
-      </body>
-      </html>';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: Student/myOrders.php');
     exit;
 }
 
-echo '<!DOCTYPE html>
-  <html lang="en">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Thanh Toán Thất Bại</title>
-      <link rel="stylesheet" href="css/tailwind.css">
-      <link rel="stylesheet" href="css/all.min.css">
-      <style>
-          body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-          .error-card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 100%; }
-          .error-icon { display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background-color: #fde8e8; color: #dc3545; border-radius: 50%; font-size: 40px; margin-bottom: 20px; }
-      </style>
-  </head>
-  <body>
-      <div class="error-card">
-          <div class="error-icon">
-              <i class="fas fa-times"></i>
-          </div>
-          <h4>Không thể xử lý giao dịch</h4>
-          <p class="text-slate-500">' . htmlspecialchars($resultMessage, ENT_QUOTES, 'UTF-8') . '</p>
-          <a href="javascript:history.back()" class="mt-3 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">Quay lại</a>
-      </div>
-  </body>
-  </html>';
-exit;
+if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+    commerce_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.');
+    header('Location: Student/myOrders.php');
+    exit;
+}
+
+$stuEmail = (string) $_SESSION['stuLogEmail'];
+$studentId = commerce_get_student_id($conn, $stuEmail);
+$orderCode = trim((string) ($_POST['order_code'] ?? ''));
+
+if ($studentId === null || $orderCode === '') {
+    commerce_set_flash('error', 'Thiếu thông tin đơn hàng để gửi minh chứng thanh toán.');
+    header('Location: Student/myOrders.php');
+    exit;
+}
+
+$orderStmt = $conn->prepare(
+    'SELECT om.order_id, om.order_code, om.order_status, p.payment_id, p.payment_status, p.payment_method, p.payment_reference, p.payment_proof_url, p.notes '
+    . 'FROM order_master om '
+    . 'LEFT JOIN payment p ON p.order_id = om.order_id '
+    . 'WHERE om.order_code = ? AND om.student_id = ? AND om.is_deleted = 0 LIMIT 1'
+);
+
+if (!$orderStmt) {
+    commerce_set_flash('error', 'Không thể tải đơn hàng để cập nhật thanh toán.');
+    header('Location: Student/myOrders.php');
+    exit;
+}
+
+$orderStmt->bind_param('si', $orderCode, $studentId);
+$orderStmt->execute();
+$orderResult = $orderStmt->get_result();
+$order = $orderResult ? $orderResult->fetch_assoc() : null;
+$orderStmt->close();
+
+if (!$order) {
+    commerce_set_flash('error', 'Không tìm thấy đơn hàng cần cập nhật thanh toán.');
+    header('Location: Student/myOrders.php');
+    exit;
+}
+
+$currentOrderStatus = (string) ($order['order_status'] ?? 'pending');
+$currentPaymentStatus = (string) ($order['payment_status'] ?? 'pending');
+if (!commerce_can_submit_payment($currentOrderStatus, $currentPaymentStatus)) {
+    commerce_set_flash('error', 'Đơn hàng này hiện không ở trạng thái cho phép gửi lại thanh toán.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+}
+
+$paymentMethod = trim((string) ($_POST['payment_method'] ?? ''));
+$paymentReference = trim((string) ($_POST['payment_reference'] ?? ''));
+$allowedMethods = ['bank_transfer', 'qr_transfer', 'momo'];
+
+if (!in_array($paymentMethod, $allowedMethods, true)) {
+    commerce_set_flash('error', 'Vui lòng chọn phương thức thanh toán hợp lệ.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+}
+
+$hasProofUpload = isset($_FILES['payment_proof'])
+    && (int) ($_FILES['payment_proof']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+
+if ($paymentReference === '' && !$hasProofUpload) {
+    commerce_set_flash('error', 'Bạn cần nhập mã tham chiếu hoặc tải lên minh chứng thanh toán. Đơn hàng sẽ được giữ ở trạng thái chờ.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+}
+
+if ($paymentReference !== '' && (!preg_match('/^[A-Za-z0-9._\-]{4,120}$/', $paymentReference))) {
+    commerce_set_flash('error', 'Mã tham chiếu chỉ được chứa chữ, số, dấu chấm, gạch nối và có độ dài từ 4 đến 120 ký tự.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+}
+
+$newProofDbPath = null;
+$newProofDiskPath = null;
+$existingProofPath = (string) ($order['payment_proof_url'] ?? '');
+
+if ($hasProofUpload) {
+    $proofError = (int) ($_FILES['payment_proof']['error'] ?? UPLOAD_ERR_NO_FILE);
+    $proofName = (string) ($_FILES['payment_proof']['name'] ?? '');
+    $proofTmpName = (string) ($_FILES['payment_proof']['tmp_name'] ?? '');
+    $proofSize = (int) ($_FILES['payment_proof']['size'] ?? 0);
+    $proofExt = strtolower(pathinfo($proofName, PATHINFO_EXTENSION));
+    $allowedProofTypes = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
+    if ($proofError !== UPLOAD_ERR_OK) {
+        commerce_set_flash('error', 'Không thể tải minh chứng thanh toán lên máy chủ.');
+        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+        exit;
+    }
+
+    if (!in_array($proofExt, $allowedProofTypes, true)) {
+        commerce_set_flash('error', 'Minh chứng thanh toán chỉ hỗ trợ JPG, JPEG, PNG, WebP hoặc PDF.');
+        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+        exit;
+    }
+
+    if ($proofSize <= 0 || $proofSize > 3 * 1024 * 1024) {
+        commerce_set_flash('error', 'Minh chứng thanh toán phải có dung lượng từ 1 byte đến tối đa 3MB.');
+        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+        exit;
+    }
+
+    $safeFileName = 'proof_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $proofExt;
+    $newProofDiskPath = __DIR__ . '/image/paymentproof/' . $safeFileName;
+    $newProofDbPath = 'image/paymentproof/' . $safeFileName;
+
+    if (!move_uploaded_file($proofTmpName, $newProofDiskPath)) {
+        commerce_set_flash('error', 'Không thể lưu minh chứng thanh toán.');
+        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+        exit;
+    }
+}
+
+$finalReference = $paymentReference !== ''
+    ? $paymentReference
+    : ((string) ($order['payment_reference'] ?? '') !== '' ? (string) $order['payment_reference'] : $orderCode);
+$finalProofPath = $newProofDbPath ?? ($existingProofPath !== '' ? $existingProofPath : null);
+$paymentStatus = 'submitted';
+$orderStatus = 'awaiting_verification';
+$notePrefix = $currentPaymentStatus === 'rejected' ? 'Học viên đã gửi lại minh chứng thanh toán.' : 'Học viên đã gửi minh chứng thanh toán.';
+$previousNote = trim((string) ($order['notes'] ?? ''));
+$paymentNote = $notePrefix;
+if ($currentPaymentStatus === 'rejected' && $previousNote !== '') {
+    $paymentNote .= ' Ghi chú lần trước: ' . $previousNote;
+}
+
+$conn->begin_transaction();
+
+try {
+    $updatePaymentStmt = $conn->prepare(
+        'UPDATE payment SET payment_method = ?, payment_reference = ?, payment_proof_url = ?, payment_status = ?, notes = ?, verified_by_admin_id = NULL, verified_at = NULL WHERE payment_id = ? LIMIT 1'
+    );
+    if (!$updatePaymentStmt) {
+        throw new RuntimeException('Không thể cập nhật payment.');
+    }
+
+    $paymentId = (int) ($order['payment_id'] ?? 0);
+    if ($paymentId <= 0) {
+        $updatePaymentStmt->close();
+        throw new RuntimeException('Đơn hàng chưa có bản ghi payment hợp lệ.');
+    }
+    $updatePaymentStmt->bind_param('sssssi', $paymentMethod, $finalReference, $finalProofPath, $paymentStatus, $paymentNote, $paymentId);
+    if (!$updatePaymentStmt->execute()) {
+        $updatePaymentStmt->close();
+        throw new RuntimeException('Không thể lưu thông tin thanh toán.');
+    }
+    $updatePaymentStmt->close();
+
+    $updateOrderStmt = $conn->prepare('UPDATE order_master SET order_status = ? WHERE order_id = ? LIMIT 1');
+    if (!$updateOrderStmt) {
+        throw new RuntimeException('Không thể cập nhật order_master.');
+    }
+
+    $orderId = (int) $order['order_id'];
+    $updateOrderStmt->bind_param('si', $orderStatus, $orderId);
+    if (!$updateOrderStmt->execute()) {
+        $updateOrderStmt->close();
+        throw new RuntimeException('Không thể đổi trạng thái đơn hàng.');
+    }
+    $updateOrderStmt->close();
+
+    $conn->commit();
+
+    if ($newProofDiskPath !== null && $existingProofPath !== '' && str_starts_with($existingProofPath, 'image/paymentproof/')) {
+        $oldDiskPath = __DIR__ . '/' . $existingProofPath;
+        if (is_file($oldDiskPath) && realpath($oldDiskPath) !== realpath($newProofDiskPath)) {
+            @unlink($oldDiskPath);
+        }
+    }
+
+    commerce_set_flash('success', 'Đã gửi thông tin thanh toán thành công. Đơn hàng hiện đang chờ admin xác minh.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+} catch (Throwable $exception) {
+    $conn->rollback();
+    if ($newProofDiskPath !== null && is_file($newProofDiskPath)) {
+        @unlink($newProofDiskPath);
+    }
+
+    commerce_set_flash('error', 'Không thể gửi thông tin thanh toán lúc này. Vui lòng thử lại.');
+    header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+    exit;
+}

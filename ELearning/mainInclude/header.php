@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
+require_once(__DIR__ . '/../commerce_helpers.php');
 $csrfToken = csrf_token();
 ?>
 <!DOCTYPE html>
@@ -94,6 +95,7 @@ $csrfToken = csrf_token();
                     echo '<div class="bg-white rounded-xl shadow-xl border border-slate-100 py-1">';
                     echo '<a href="Student/studentProfile.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary"><i class="fas fa-user w-4 text-center"></i> Hồ sơ của tôi</a>';
                     echo '<a href="Student/myCourse.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary"><i class="fas fa-book-reader w-4 text-center"></i> Khóa học của tôi</a>';
+                    echo '<a href="Student/myOrders.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary"><i class="fas fa-receipt w-4 text-center"></i> Đơn hàng của tôi</a>';
                     echo '<hr class="my-1 border-slate-100">';
                     echo '<a href="logout.php" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"><i class="fas fa-sign-out-alt w-4 text-center"></i> Đăng xuất</a>';
                     echo '</div></div></div>';

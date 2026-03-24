@@ -1,6 +1,7 @@
 # Database
 *.sql
 !SQL/
+!SQL/*.sql
 
 # Backup and temp files
 *~

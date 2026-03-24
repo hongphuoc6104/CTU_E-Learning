@@ -1,5 +1,9 @@
 <?php 
   include('./dbConnection.php');
+  $redirectTarget = trim((string) ($_GET['redirect'] ?? ''));
+  if ($redirectTarget !== '' && (str_contains($redirectTarget, '://') || str_starts_with($redirectTarget, '//') || str_contains($redirectTarget, "\n") || str_contains($redirectTarget, "\r"))) {
+      $redirectTarget = '';
+  }
   // Header Include from mainInclude 
   include('./mainInclude/header.php'); 
 ?>
@@ -18,6 +22,7 @@
         <div class="bg-white shadow-xl rounded-2xl p-10 border border-slate-100">
           <h5 class="mb-8 text-2xl font-black text-primary text-center flex justify-center items-center gap-3"><i class="fas fa-user-plus"></i> Tạo tài khoản mới</h5>
           <form role="form" id="stuRegForm" class="space-y-6">
+            <input type="hidden" id="stuSignupRedirect" value="<?php echo htmlspecialchars($redirectTarget, ENT_QUOTES, 'UTF-8'); ?>">
             <div>
               <label for="stuname" class="block text-sm font-semibold text-slate-700 mb-2">
                 <i class="fas fa-user text-slate-400 mr-1"></i> Họ và tên
@@ -49,8 +54,8 @@
           </div>
           <div class="text-center mt-6 pt-6 border-t border-slate-100">
               <span class="text-slate-600 text-sm">Đã có tài khoản? </span>
-              <a href="login.php" class="text-primary font-bold hover:underline text-sm">Đăng nhập ngay</a>
-          </div>
+              <a href="login.php<?php echo $redirectTarget !== '' ? '?redirect=' . rawurlencode($redirectTarget) : ''; ?>" class="text-primary font-bold hover:underline text-sm">Đăng nhập ngay</a>
+           </div>
         </div>
       </div>
      </div>

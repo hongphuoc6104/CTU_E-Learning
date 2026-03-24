@@ -1,5 +1,8 @@
 <?php
+  require_once(__DIR__ . '/session_bootstrap.php');
+  secure_session_start();
   include('./dbConnection.php');
+  require_once('./commerce_helpers.php');
   $course_id = isset($_GET['course_id']) ? (int) $_GET['course_id'] : 0;
 
   if ($course_id <= 0) {
@@ -8,7 +11,7 @@
   }
 
   $courseExists = false;
-  $checkCourseStmt = $conn->prepare('SELECT 1 FROM course WHERE course_id = ? AND is_deleted = 0 LIMIT 1');
+  $checkCourseStmt = $conn->prepare("SELECT 1 FROM course WHERE course_id = ? AND is_deleted = 0 AND course_status = 'published' LIMIT 1");
   if ($checkCourseStmt) {
       $checkCourseStmt->bind_param('i', $course_id);
       $checkCourseStmt->execute();
@@ -21,6 +24,11 @@
       header('Location: courses.php');
       exit;
   }
+
+  $stuEmail = isset($_SESSION['is_login'], $_SESSION['stuLogEmail']) ? (string) $_SESSION['stuLogEmail'] : '';
+  $studentId = $stuEmail !== '' ? commerce_get_student_id($conn, $stuEmail) : null;
+  $courseState = commerce_fetch_course_states($conn, $studentId, [$course_id]);
+  $courseState = $courseState[$course_id] ?? ['is_enrolled' => false, 'has_open_order' => false, 'open_order_code' => null, 'open_order_status' => null];
 
   // Header Include from mainInclude 
   include('./mainInclude/header.php'); 
@@ -39,9 +47,16 @@
 
 <section class="py-16 px-6 bg-background-light min-h-screen">
     <div class="max-w-7xl mx-auto">
+        <?php $commerceFlash = commerce_pull_flash(); ?>
+        <?php if($commerceFlash): ?>
+        <div class="mb-6 flex items-center gap-3 rounded-2xl border px-5 py-4 text-sm font-semibold <?php echo ($commerceFlash['type'] ?? '') === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'; ?>">
+            <i class="fas <?php echo ($commerceFlash['type'] ?? '') === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
+            <span><?php echo htmlspecialchars((string) ($commerceFlash['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+        </div>
+        <?php endif; ?>
         <!-- Course Details -->
         <?php
-          $stmtCourse = $conn->prepare('SELECT * FROM course WHERE course_id = ? AND is_deleted = 0 LIMIT 1');
+          $stmtCourse = $conn->prepare("SELECT * FROM course WHERE course_id = ? AND is_deleted = 0 AND course_status = 'published' LIMIT 1");
           if($stmtCourse) {
             $stmtCourse->bind_param('i', $course_id);
             $stmtCourse->execute();
@@ -76,23 +91,7 @@
                         
                         <div class="flex flex-wrap gap-4 mt-auto">
                             ';
-                            // Check if already purchased
-                            $isPurchased = false;
-                            if(isset($_SESSION['is_login']) && $_SESSION['is_login']){
-                                $stuEmail = $_SESSION['stuLogEmail'];
-                                $checkStmt = $conn->prepare("SELECT 1 FROM courseorder WHERE stu_email = ? AND course_id = ? AND status = 'TXN_SUCCESS' AND is_deleted = 0 LIMIT 1");
-                                if($checkStmt) {
-                                    $checkStmt->bind_param('si', $stuEmail, $course_id);
-                                    $checkStmt->execute();
-                                    $checkRes = $checkStmt->get_result();
-                                    if($checkRes && $checkRes->num_rows > 0){
-                                        $isPurchased = true;
-                                    }
-                                    $checkStmt->close();
-                                }
-                            }
-
-                            if($isPurchased){
+                            if($courseState['is_enrolled']){
                                 echo '
                                 <a href="Student/watchcourse.php?course_id='.$course_id.'" class="w-full md:w-auto px-8 py-3.5 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2 No-underline">
                                     <i class="fas fa-play-circle text-lg"></i> Học ngay
@@ -101,12 +100,34 @@
                                     <i class="fas fa-check-circle"></i> Đã sở hữu khoá học
                                 </div>
                                 ';
+                            } elseif($courseState['has_open_order']) {
+                                $openOrderLabel = $courseState['open_order_status'] === 'awaiting_verification' ? 'Theo dõi đơn hàng' : 'Tiếp tục thanh toán';
+                                echo '
+                                <a href="Student/orderDetails.php?order_code='.rawurlencode((string) $courseState['open_order_code']).'" class="w-full md:w-auto px-8 py-3.5 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 No-underline">
+                                    <i class="fas fa-receipt text-lg"></i> '.$openOrderLabel.'
+                                </a>
+                                <div class="flex items-center text-amber-700 font-semibold gap-2 ml-4">
+                                    <i class="fas fa-info-circle"></i> Khóa học này đang có đơn hàng chưa hoàn tất
+                                </div>
+                                ';
+                            } elseif(!isset($_SESSION['is_login']) || !$_SESSION['is_login']) {
+                                $loginLink = 'login.php?redirect=' . rawurlencode('coursedetails.php?course_id=' . $course_id);
+                                $signupLink = 'signup.php?redirect=' . rawurlencode('coursedetails.php?course_id=' . $course_id);
+                                echo '
+                                <a href="'.$loginLink.'" class="w-full md:w-auto px-8 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 No-underline">
+                                    <i class="fas fa-sign-in-alt text-lg"></i> Đăng nhập để mua
+                                </a>
+                                <a href="'.$signupLink.'" class="w-full md:w-auto px-8 py-3.5 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-colors flex items-center justify-center gap-2 No-underline">
+                                    <i class="fas fa-user-plus text-lg"></i> Tạo tài khoản
+                                </a>
+                                ';
                             } else {
                                 echo '
                                 <button type="button" class="px-6 py-3.5 bg-white border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/5 transition-colors flex items-center gap-2" onclick="addToCart('.$course_id.')">
                                     <i class="fas fa-cart-plus"></i> Thêm vào giỏ
                                 </button>
                                 <form action="checkout.php" method="post" class="m-0 flex-grow max-w-[200px]">
+                                  <input type="hidden" name="csrf_token" value="'.htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8').'"> 
                                   <input type="hidden" name="course_id" value="'.$course_id.'"> 
                                   <input type="hidden" name="checkout_type" value="single">
                                   <button type="submit" class="w-full h-full px-6 py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" name="buy">

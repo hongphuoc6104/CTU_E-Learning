@@ -111,6 +111,9 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
       <a href="sellReport.php" class="nav-link <?php echo ($currentPage=='sellreport')?'active':''; ?>">
         <i class="fas fa-chart-line"></i> Doanh thu
       </a>
+      <a href="payments.php" class="nav-link <?php echo ($currentPage=='payments')?'active':''; ?>">
+        <i class="fas fa-money-check-alt"></i> Xác minh thanh toán
+      </a>
       <a href="feedback.php" class="nav-link <?php echo ($currentPage=='feedback')?'active':''; ?>">
         <i class="fas fa-comment-dots"></i> Đánh giá
       </a>
