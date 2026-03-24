@@ -38,3 +38,4 @@ node_modules/
 vendor/
 .stitch/
 .gemini/
+.runtime/
