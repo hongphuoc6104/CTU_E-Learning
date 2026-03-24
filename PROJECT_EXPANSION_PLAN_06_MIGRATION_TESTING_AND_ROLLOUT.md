@@ -51,7 +51,8 @@ This snapshot is intentionally preparation-only and does not certify final relea
 
 ### Real blockers found during preparation
 
-- missing admin operation pages referenced in navigation and payment queue (`instructors.php`, `liveSessions.php`, `paymentDetails.php`)
+- Plan 05 is still the active implementation lane and has not reached stabilization signoff
+- admin reporting remains partially legacy-first in several screens and cannot be final-certified yet
 - seed data currently has enrollment records in only one status (`active`), which blocks full seed-state certification for final rollout
 
 ### Explicitly deferred until Plan 05 stabilization

@@ -63,10 +63,7 @@ Prepare migration and compatibility notes for rollout safety while Plan 05 is st
 
 ## Known Blockers Found During Preparation
 
-1. Missing admin operation pages referenced by navigation/links:
-   - `ELearning/Admin/instructors.php`
-   - `ELearning/Admin/liveSessions.php`
-   - `ELearning/Admin/paymentDetails.php`
+1. Plan 05 stabilization is not complete yet, so final migration cleanup/signoff is blocked by governance sequence.
 2. Admin reporting still legacy-first (not yet fully aligned to new order/enrollment model):
    - `ELearning/Admin/adminDashboard.php`
    - `ELearning/Admin/sellReport.php`
