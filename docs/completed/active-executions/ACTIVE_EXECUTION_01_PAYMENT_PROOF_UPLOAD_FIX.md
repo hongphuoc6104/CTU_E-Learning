@@ -12,10 +12,15 @@ Current project state:
   - severity: high
 
 Latest verification status:
-- one earlier AI diagnosis pointed to upload-directory permission mismatch and added a workspace-side pre-flight check
-- however, live verification on `http://localhost/ELearning/` still fails
-- the deployed XAMPP copy and runtime upload directory are not yet confirmed green together
-- treat this workstream as still OPEN until a live retest passes end-to-end
+- the runtime-safe upload fix is now present in workspace code and has been synced to the live XAMPP copy
+- live verification on `http://localhost/ELearning/` now passes for the payment-proof upload flow
+- retest confirmed:
+  - upload proof file is stored successfully
+  - `order_status` changes to `awaiting_verification`
+  - `payment_status` changes to `submitted`
+  - `payment_proof_url` is stored in the database
+
+Current status: COMPLETE for step 01.
 
 Objective:
 - Fix only the payment proof upload bug.

@@ -4,11 +4,17 @@ Standalone AI handoff file.
 
 Precondition:
 - Run this only after:
-  - `ACTIVE_EXECUTION_02_FRESH_IMPORT_SEED_RERUN.md`
+  - `docs/completed/active-executions/ACTIVE_EXECUTION_02_FRESH_IMPORT_SEED_RERUN.md`
   - `ACTIVE_EXECUTION_03_PAYMENT_PROOF_RETEST.md`
 
 Objective:
 - Update final-lane docs and release gates from verified evidence only.
+
+Latest verification status:
+- a previous AI execution produced a release-gate update result file
+- however, because `ACTIVE_EXECUTION_03_PAYMENT_PROOF_RETEST.md` is not yet confirmed green on the current runtime/database state, this lane must still be treated as OPEN / PROVISIONAL
+
+Current status: PROVISIONAL ONLY until step 03 is verified.
 
 Do not do:
 - no feature changes

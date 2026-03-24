@@ -12,6 +12,12 @@ Precondition:
 Objective:
 - Perform only safe final cleanup work that is backed by evidence.
 
+Latest verification status:
+- a prior result file already concluded `NOT READY`
+- blockers remain open because final regression evidence is still incomplete
+
+Current status: NOT STARTABLE YET.
+
 Do not do:
 - no risky cleanup without evidence
 - no aggressive legacy deletion just to make the repo look cleaner

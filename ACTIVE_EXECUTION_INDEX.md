@@ -7,21 +7,27 @@ Current state:
 - Plan 06 preparation lane is complete.
 - Regression batch A already ran once and reported 31/32 pass.
 - Seed gap B is closed.
-- Payment-proof fix lane C1 has been diagnosed, but the live runtime retest is still failing and the step is not closed yet.
+- Payment-proof fix lane C1 is now closed with a green live retest on `http://localhost/ELearning/`.
+- Fresh-import seed-sensitive rerun A2 is also complete and confirmed the prior instructor-seed failure was environment drift, not a true seed gap.
+- Targeted proof retest lane C2 is NOT confirmed complete on the current runtime/database state.
+- Release-gates closure lane D has been attempted, but it must be treated as provisional until C2 is truly green.
 - Remaining work is final-lane execution only.
 
 Execution order:
 
-1. `ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md`
-   - still open, run now
-2. `ACTIVE_EXECUTION_02_FRESH_IMPORT_SEED_RERUN.md`
-   - still open, can run in parallel with step 1 if it uses a fresh import / isolated test state
-3. `ACTIVE_EXECUTION_03_PAYMENT_PROOF_RETEST.md`
-   - run only after step 1 is verified green on the live runtime
-4. `ACTIVE_EXECUTION_04_RELEASE_GATES_CLOSURE.md`
-   - run after steps 2 and 3
-5. `ACTIVE_EXECUTION_05_FINAL_CLEANUP_IF_APPROVED.md`
-   - optional, only after step 4 and owner confirmation
+Completed and archived:
+
+- `docs/completed/active-executions/ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md`
+- `docs/completed/active-executions/ACTIVE_EXECUTION_02_FRESH_IMPORT_SEED_RERUN.md`
+
+Remaining execution order:
+
+1. `ACTIVE_EXECUTION_03_PAYMENT_PROOF_RETEST.md`
+   - still required now
+2. `ACTIVE_EXECUTION_04_RELEASE_GATES_CLOSURE.md`
+   - rerun after step 1 is verified green
+3. `ACTIVE_EXECUTION_05_FINAL_CLEANUP_IF_APPROVED.md`
+   - optional, only after step 2 and owner confirmation
 
 Rule:
 - Send exactly one of the numbered files above to another AI.

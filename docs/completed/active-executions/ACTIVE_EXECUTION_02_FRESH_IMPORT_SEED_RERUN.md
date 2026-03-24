@@ -11,6 +11,16 @@ Current project state:
 - There is strong suspicion this was environment state drift, not a true seed gap.
 - Seed-gap lane B already closed the enrollment-state diversity blocker, so this rerun is now focused only on verifying the instructor-state case under a clean import.
 
+Latest verification status:
+- a fresh import of `SQL/lms_db.sql` was executed
+- seeded course states were confirmed directly in the database:
+  - `Excel văn phòng cho người đi làm` -> `draft`
+  - `Laravel Team Project Workflow` -> `pending_review`
+- instructor login + course-list checks confirmed the seeded states are visible in the expected instructor/admin operational views
+- conclusion: the earlier regression failure was environment drift, not a true seed gap
+
+Current status: COMPLETE for step 02.
+
 Objective:
 - Run a fresh-import, seed-sensitive rerun to decide whether the prior failure was a real seed problem or only test-environment mutation.
 

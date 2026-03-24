@@ -51,9 +51,9 @@ This snapshot is intentionally preparation-only and does not certify final relea
 ### Real blockers found during preparation
 
 - one full regression batch has run and reported `31/32` pass, but final regression evidence is not complete yet
-- a real high-severity runtime bug remains open: payment proof file upload still fails on the live student payment flow
+- the payment-proof upload bug has now been fixed and verified green on the live student payment flow; the proof-related regression subset still needs its dedicated rerun evidence
 - rollout signoff evidence has not been collected yet
-- seed-state diversity blocker is now closed in SQL seed, but fresh-import regression evidence is still required for final rollout certification
+- seed-state diversity blocker is now closed in SQL seed, and the fresh-import instructor seed-state rerun confirms the earlier failure was environment drift, not a true seed gap
 
 ### Explicitly deferred until Plan 05 stabilization
 

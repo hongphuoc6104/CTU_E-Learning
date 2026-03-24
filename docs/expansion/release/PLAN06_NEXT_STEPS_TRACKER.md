@@ -8,16 +8,19 @@ Generated: 2026-03-24
 - Plan 06 preparation lane is complete.
 - Regression lane A has already run one full batch and reported `31/32` pass.
 - Seed-gap lane B has already closed the enrollment-state diversity blocker.
-- C1 has partial diagnosis only; the live runtime proof-upload retest is still failing, so the bug-fix lane remains open.
+- C1 is now complete: the live runtime proof-upload retest is green on `http://localhost/ELearning/`.
+- A2 is now complete: a fresh-import rerun confirmed the instructor seed-state issue was environment drift, not a true seed gap.
+- D has already been attempted once and produced a provisional release-gate update, but it cannot be considered final while C2 is still open.
 
 ## Confirmed Open Items
 
 1. Real bug to fix:
-    - payment proof file upload fails in `ELearning/checkout_action.php`
+   - closed in C1; keep step C2 for regression confirmation only
 2. Seed-sensitive rerun still needed on fresh import:
-   - verify instructor-owned `draft` and `pending_review` seed courses exist before any state-mutating tests
-3. Regression evidence and release-gate docs still need to be updated with final verified results
-4. Final cleanup/signoff is still deferred until all regression evidence is green
+   - closed in A2; seed-sensitive instructor rerun is green on fresh import
+3. C2 still needs to be executed and evidenced on the current runtime/database state
+4. Release-gate docs still need a final post-C2 closure pass
+5. Final cleanup/signoff is still deferred until all regression evidence is green
 
 ## Recommended Execution Order
 
@@ -81,17 +84,16 @@ Only start if:
 ## Safe Parallelism
 
 - C1 can run now.
-- A2 can also run now on a fresh import if it does not mutate the same test environment used by C1.
-- C2 must wait for C1 to be verified green on the live runtime.
+- C2 can run now.
 - D must wait for C2 and A2.
 - E must wait for D and owner confirmation.
 
 ## Tracking Board
 
-- [ ] C1 Fix payment proof upload bug and verify it on live runtime
+- [x] C1 Fix payment proof upload bug and verify it on live runtime
+- [x] A2 Rerun seed-sensitive instructor case on fresh import
 - [ ] C2 Rerun payment-proof regression subset
-- [ ] A2 Rerun seed-sensitive instructor case on fresh import
-- [ ] D Update release gates and docs from verified evidence
+- [ ] D Finalize release gates and docs from verified evidence
 - [ ] E Optional final cleanup/signoff lane
 
 ## Standalone Prompt Files
