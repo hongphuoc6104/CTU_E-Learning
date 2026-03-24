@@ -17,19 +17,19 @@ Core product shape after expansion:
 
 ## Relationship To Existing Plan Files
 
-- `PROJECT_EXPANSION_PLAN_INDEX.md`
+- `docs/expansion/PROJECT_EXPANSION_PLAN_INDEX.md`
   - master roadmap for the next expansion wave
-- `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
   - data model and foundation
-- `PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
   - customer storefront and commerce flows
-- `PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
   - learning content, progress, quiz, replay
-- `PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
   - instructor role and live-session workflow
-- `PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
   - admin approval, moderation, reporting, operations
-- `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
+- `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
   - migration order, rollout, regression, release gates
 
 ## Execution Status Update
@@ -40,17 +40,17 @@ Current repository status for this expansion wave:
 - Plan 02 is already implemented enough for runtime commerce flow and should now be treated as a stabilization layer, not a new feature lane
 - Plan 03 is functionally complete and is already serving as the active student learning dependency
 - Plan 04 is functionally complete and now provides the instructor/course/live-session workflow required by admin operations
-- Plan 05 is the primary next implementation lane
-- Plan 06 can start in parallel only for migration notes, regression planning, test matrix, and rollout/documentation preparation
+- Plan 05 is functionally complete for core admin operations and should now be treated as a stabilization lane
+- Plan 06 preparation artifacts are complete, but final regression/certification is still open
 
 Practical status summary:
 
-- `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md` -> foundation in place
-- `PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md` -> implemented, keep in stabilization mode
-- `PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md` -> functionally complete
-- `PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md` -> functionally complete
-- `PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md` -> ready to execute now
-- `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md` -> ready for partial parallel preparation only
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md` -> foundation in place
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md` -> implemented, keep in stabilization mode
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md` -> functionally complete
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md` -> functionally complete
+- `docs/expansion/completed/PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md` -> functionally complete, keep in stabilization mode
+- `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md` -> preparation lane complete, final certification still pending
 
 Previous audit and hardening waves are already completed and are treated as baseline context rather than active plan files in the repository.
 
@@ -181,12 +181,12 @@ Do not try to implement all plans in one pass.
 
 ## Recommended Execution Order
 
-1. `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
-2. `PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
-3. `PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
-4. `PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
-5. `PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
-6. `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
+1. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
+2. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
+3. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
+4. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
+5. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
+6. `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
 
 ## Suggested AI Assignment Strategy
 
@@ -205,22 +205,22 @@ If using only one AI, execute the plans in strict order.
 
 ## Safe Parallel Execution Now
 
-At the current project state, safe parallel work can be split like this:
+At the current project state, safe work should be split like this:
 
-- Lane A: Plan 05 as the main implementation stream
-- Lane B: Plan 06 preparation stream for testing, migration notes, rollout checklist, and documentation updates
+- Lane A: final regression execution and rollout evidence collection from Plan 06 artifacts
+- Lane B: targeted stabilization fixes only when regression uncovers real bugs in Plans 02 to 05
 
-Do not treat Plans 01 to 04 as new parallel feature lanes anymore.
+Do not treat Plans 01 to 05 as new open feature lanes anymore.
 
-Use Plans 01 to 04 only for:
+Use Plans 01 to 05 only for:
 
 - blocker fixes
-- small integration fixes
-- stabilization bugs discovered while executing Plan 05 or Plan 06
+- regression-driven bug fixes
+- small integration fixes required for final certification
 
 Important boundary:
 
-- final cleanup, legacy deprecation, and release signoff still belong at the end of Plan 06 after Plan 05 stabilizes
+- final cleanup, legacy deprecation, and release signoff still belong at the end of Plan 06 after regression gates are green
 
 ## Global Non-Goals
 

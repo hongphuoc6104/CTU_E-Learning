@@ -12,18 +12,17 @@ Provide the execution order, compatibility strategy, migration strategy, and reg
 
 Current repository status:
 
-- Plans 01 to 04 are already implemented to the point that migration/testing work can begin in parallel with Plan 05
-- this plan should not yet perform final cleanup while Plan 05 is still being implemented
-- this plan is now safe to execute as a preparation stream for testing, rollout notes, migration notes, and documentation planning
+- Plans 01 to 05 are now implemented to the point that regression, rollout, and migration preparation can be treated as the main remaining workstream
+- the preparation artifacts for migration notes, regression checklist, seed validation, release gates, and docs planning already exist in the repository
+- this plan still must not perform final cleanup or final certification until regression evidence and remaining release blockers are resolved
 
-This plan is ready for partial parallel execution now.
+Plan 06 can now be treated as complete for the preparation lane, but not complete for final release certification.
 
 Safe work to do now:
 
-- build/update regression checklist
-- build/update migration notes and compatibility checklist
-- validate seed-data coverage and documented demo scenarios
-- prepare final documentation updates and rollout gates
+- execute the prepared regression matrix on a fresh import
+- close remaining rollout blockers with evidence
+- update final docs and rollout signoff inputs once regression is green
 
 Work that should still wait until Plan 05 stabilizes:
 
@@ -42,18 +41,18 @@ This snapshot is intentionally preparation-only and does not certify final relea
 
 ### Preparation artifacts produced now
 
-- `PLAN06_MIGRATION_BACKFILL_CHECKLIST.md`
-- `PLAN06_REGRESSION_MATRIX_EXECUTABLE.md`
-- `PLAN06_SEED_DATA_VALIDATION_SUMMARY.md`
-- `PLAN06_DOCS_UPDATE_CHECKLIST.md`
-- `PLAN06_RELEASE_GATES_AND_BLOCKERS.md`
+- `docs/expansion/release/PLAN06_MIGRATION_BACKFILL_CHECKLIST.md`
+- `docs/expansion/release/PLAN06_REGRESSION_MATRIX_EXECUTABLE.md`
+- `docs/expansion/release/PLAN06_SEED_DATA_VALIDATION_SUMMARY.md`
+- `docs/expansion/release/PLAN06_DOCS_UPDATE_CHECKLIST.md`
+- `docs/expansion/release/PLAN06_RELEASE_GATES_AND_BLOCKERS.md`
 - `SQL/plan06_seed_validation_checks.sql`
 
 ### Real blockers found during preparation
 
-- Plan 05 is still the active implementation lane and has not reached stabilization signoff
-- admin reporting remains partially legacy-first in several screens and cannot be final-certified yet
-- seed data currently has enrollment records in only one status (`active`), which blocks full seed-state certification for final rollout
+- final regression matrix has not been fully executed and certified yet
+- rollout signoff evidence has not been collected yet
+- seed-state diversity blocker is now closed in SQL seed, but fresh-import regression evidence is still required for final rollout certification
 
 ### Explicitly deferred until Plan 05 stabilization
 

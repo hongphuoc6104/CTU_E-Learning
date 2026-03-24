@@ -12,24 +12,23 @@ Allow admins to control quality, payment verification, publishing, users, and re
 
 Current repository status:
 
-- dependencies from Plans 01 to 04 are now available in runtime code
-- payment verification already exists in a focused form and should be extended here instead of rebuilt from scratch
-- instructor workflow, course ownership, live sessions, replay flow, and student enrollments are already present, so this plan can now become the main implementation lane
+- dependencies from Plans 01 to 04 are available in runtime code
+- admin review, payment verification, instructor management, live-session oversight, and reporting screens are now implemented in the admin module
+- the new admin layer already reuses live commerce, enrollment, instructor, and live-session data instead of standing apart from them
 
-This plan is ready to execute now.
+Plan 05 can now be treated as functionally complete for the current wave.
 
 Remaining completion focus for this plan:
 
-- complete admin course review and publishing workflow
-- expand payment verification into a fuller admin operations flow with detail screens and stale-state handling
-- add instructor management and admin live-session oversight
-- align reporting with paid orders and enrollment reality
+- keep admin operations stable while final regression and rollout checks are executed
+- only apply targeted fixes here if regression uncovers stale-state, transaction, or reporting issues
+- do not reopen this plan for unrelated UI redesign or finance/accounting scope
 
 Important implementation note:
 
-- reuse the current `ELearning/Admin/payments.php` implementation as a base where practical
+- the implemented admin files now include `ELearning/Admin/courseReview.php`, `ELearning/Admin/paymentDetails.php`, `ELearning/Admin/instructors.php`, `ELearning/Admin/liveSessions.php`, and shared helpers in `ELearning/Admin/admin_helpers.php`
+- Plan 05 should now be treated as a stabilization lane, not as an open-ended feature lane
 - do not reopen Plans 01 to 04 for new feature work unless this plan finds a real blocker
-- keep admin work focused on operations, review, verification, and reporting only
 
 ## Dependencies
 

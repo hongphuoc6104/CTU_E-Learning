@@ -3,16 +3,16 @@
 Copy the prompt below into another AI if you want that AI to execute the full expansion roadmap in order.
 
 ```text
-Hãy đọc và thực thi đúng theo toàn bộ bộ kế hoạch mở rộng ở thư mục gốc dự án.
+Hãy đọc và thực thi đúng theo toàn bộ bộ kế hoạch mở rộng trong thư mục `docs/expansion/` của dự án.
 
 Thứ tự đọc và thực thi bắt buộc:
-1. `PROJECT_EXPANSION_PLAN_INDEX.md`
-2. `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
-3. `PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
-4. `PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
-5. `PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
-6. `PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
-7. `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
+1. `docs/expansion/PROJECT_EXPANSION_PLAN_INDEX.md`
+2. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md`
+3. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md`
+4. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md`
+5. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md`
+6. `docs/expansion/completed/PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md`
+7. `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
 
 Đây là expansion wave cho sản phẩm.
 Sản phẩm vẫn là web bán khóa học.

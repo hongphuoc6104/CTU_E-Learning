@@ -45,12 +45,12 @@ Prepare documentation updates needed for migration/testing/rollout without claim
 
 - [x] Plan 06 now references preparation artifacts.
 - [ ] Link all Plan 06 checklist files from README (or a central release notes section) before final lane.
-- [ ] Add explicit release gate table and blocker list in docs (see `PLAN06_RELEASE_GATES_AND_BLOCKERS.md`).
+- [ ] Add explicit release gate table and blocker list in docs (see `docs/expansion/release/PLAN06_RELEASE_GATES_AND_BLOCKERS.md`).
 
 ## Files To Update In Final Documentation Pass
 
 - `README.md`
-- `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
+- `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
 - (optional) a dedicated release notes file if project owner wants one
 
 ## Notes

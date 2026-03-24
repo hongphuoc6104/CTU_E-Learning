@@ -15,8 +15,8 @@ Prepare migration and compatibility notes for rollout safety while Plan 05 is st
 
 ## Dependencies Checked
 
-- `PROJECT_EXPANSION_PLAN_INDEX.md`
-- `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
+- `docs/expansion/PROJECT_EXPANSION_PLAN_INDEX.md`
+- `docs/expansion/release/PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
 - seed baseline file: `SQL/lms_db.sql`
 
 ## Current Compatibility Map
@@ -59,17 +59,12 @@ Prepare migration and compatibility notes for rollout safety while Plan 05 is st
 
 - [x] Seed validation query script prepared: `SQL/plan06_seed_validation_checks.sql`.
 - [ ] Run script on fresh import and store evidence snapshot.
-- [ ] Resolve all FAIL checks (including enrollment state diversity) before final certification.
+- [ ] Resolve all remaining FAIL checks on fresh import before final certification.
 
 ## Known Blockers Found During Preparation
 
-1. Plan 05 stabilization is not complete yet, so final migration cleanup/signoff is blocked by governance sequence.
-2. Admin reporting still legacy-first (not yet fully aligned to new order/enrollment model):
-   - `ELearning/Admin/adminDashboard.php`
-   - `ELearning/Admin/sellReport.php`
-   - `ELearning/Admin/students.php`
-   - `ELearning/Admin/courses.php`
-3. Seed enrollment state diversity not complete for final certification (only `active` seen in current seed).
+1. Final regression matrix and rollout evidence have not been fully executed yet.
+2. Final migration cleanup/signoff is intentionally deferred until release gates are green.
 
 ## Deferred To Final Cleanup Lane (After Plan 05 Stable)
 

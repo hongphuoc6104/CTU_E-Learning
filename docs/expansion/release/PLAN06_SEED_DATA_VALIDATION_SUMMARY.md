@@ -69,15 +69,15 @@ Validated source: `SQL/lms_db.sql`
 | courses in multiple states | PASS | draft/pending/published/archived |
 | learning items in multiple types | PASS | all required types present |
 | payments in multiple states | PASS | pending/submitted/verified/rejected |
-| enrollments in multiple states | PARTIAL | only `active` state currently seeded |
+| enrollments in multiple states | PASS | `active` + `expired` seeded |
 | live sessions in multiple states | PASS | scheduled/ended/replay_available |
 | replay links | PASS | replay_asset seeded |
 | quiz attempts | PASS | pass and fail attempts present |
 
 ## Identified Gap For Final Certification
 
-- Enrollment state diversity is partial: current seed includes only `enrollment_status = active`.
-- For final certification, add at least one realistic non-active example (`expired` or `revoked`) without breaking default demo paths.
+- Enrollment-state gap is closed in seed: non-active case now present via `enrollment_status = expired`.
+- Active primary demo learning flows remain intact because partial-progress and main completed learning scenarios stay on `active` records.
 
 ## Runtime Compatibility Notes From Seed
 

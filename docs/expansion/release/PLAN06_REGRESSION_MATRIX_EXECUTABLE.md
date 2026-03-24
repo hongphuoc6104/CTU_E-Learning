@@ -90,9 +90,9 @@ Purpose: provide an executable matrix for staged and final certification runs wi
 
 ## Current Preparation Blockers (Track During Execution)
 
-- [ ] Plan 05 stabilization signoff not completed yet.
-- [ ] Reporting alignment to final paid-order source-of-truth not finalized.
-- [ ] Enrollment seed states currently lack non-`active` rows for final-state diversity.
+- [ ] Final regression evidence pack not completed yet.
+- [ ] Final rollout/signoff evidence not completed yet.
+- [x] Enrollment seed states include a non-`active` row for final-state diversity.
 
 ## Certification Rule
 
