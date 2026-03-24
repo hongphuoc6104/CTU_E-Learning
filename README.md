@@ -75,6 +75,15 @@ Code PHP cần có dữ liệu để hiển thị. Bạn phải "nhập" (import
 7. Cuộn xuống dưới cùng, nhấn **Go** (Thực hiện).
 8. File `SQL/lms_db.sql` đã bao gồm toàn bộ bảng bắt buộc (`cart`, `contact_message`, các cột `is_deleted`...), nên **không cần import thêm file SQL thứ hai**.
 
+### Bước 3.1 (tuỳ chọn): kiểm tra nhanh seed-data cho lane Plan 06
+Nếu bạn đang chạy lane chuẩn bị migration/testing/rollout (Plan 06), có thể chạy thêm bộ query kiểm tra trong file `SQL/plan06_seed_validation_checks.sql`:
+
+1. Mở tab **SQL** trong phpMyAdmin sau khi đã import xong `SQL/lms_db.sql`.
+2. Copy nội dung từ `SQL/plan06_seed_validation_checks.sql` và chạy.
+3. Xem các dòng `PASS`/`FAIL` để xác nhận độ phủ seed-data cho regression matrix.
+
+Lưu ý: bộ check này phục vụ chuẩn bị rollout và **không thay thế** kiểm thử chức năng end-to-end.
+
 ### Bước 4: Kiểm tra File cấu hình kết nối
 Hệ thống cần biết mật khẩu MySQL của máy bạn để kết nối. File quy định điều này là `ELearning/dbConnection.php`.
 - Mặc định XAMPP **không có mật khẩu** MySQL. File `dbConnection.php` đã được set sẵn `$db_password = "";`, nên thường bạn **không cần sửa gì**.
