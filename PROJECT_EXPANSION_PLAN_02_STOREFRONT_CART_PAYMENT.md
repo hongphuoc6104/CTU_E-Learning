@@ -16,6 +16,26 @@ Upgrade the storefront and checkout journey so that:
 - enrollment is created only after verified payment
 - the website still feels like a course-commerce site
 
+## Execution Status Update
+
+Current repository status while Plan 03 is already in progress:
+
+- public storefront filtering for published courses is already in place
+- cart, order creation, payment submission, student order pages, and admin payment verification are already being implemented in runtime PHP files
+- `enrollment` is already being used by current student learning flows, so this plan must now stabilize ownership and commerce state transitions instead of reopening broad UI scope
+
+Remaining completion focus for this plan:
+
+- keep `enrollment` as the primary ownership/access source for student-facing flows
+- keep `courseorder` only as compatibility data for legacy admin/report pages until those areas are migrated later
+- verify that cart rows, open orders, paid orders, and enrollments stay logically aligned while Plan 03 continues to build on top of them
+- run end-to-end checks for: add to cart, create order, submit proof, admin verify/reject, and enrolled course visibility
+
+Important implementation note:
+
+- do not pause Plan 03 waiting for every compatibility cleanup in this plan
+- only make focused commerce/access fixes here when they directly affect ownership, checkout state, or student access consistency
+
 ## Dependencies
 
 This plan assumes Plan 01 foundation exists or is being implemented in the same wave.

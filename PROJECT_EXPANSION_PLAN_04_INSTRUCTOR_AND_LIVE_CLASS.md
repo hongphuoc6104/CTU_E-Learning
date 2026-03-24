@@ -13,6 +13,41 @@ They are not a separate product line.
 
 Allow instructors to create course content, schedule live sessions, and publish replay links after class, while keeping admin in control of final publishing and payment verification.
 
+## Execution Status Update
+
+Current repository status:
+
+- the instructor area is already implemented under `ELearning/Instructor/`
+- instructor authentication, dashboard access, owned-course protection, draft course creation, course editing, section management, learning-item management, live-session scheduling, replay update flow, and instructor-side student listing are already present in runtime PHP files
+- instructor access is restricted to owned courses and active instructor accounts through shared instructor auth helpers
+- live sessions use external URLs only, and replay remains URL metadata only
+
+Implemented files now include at least:
+
+- `ELearning/Instructor/instructorLogin.php`
+- `ELearning/Instructor/instructorDashboard.php`
+- `ELearning/Instructor/courses.php`
+- `ELearning/Instructor/addCourse.php`
+- `ELearning/Instructor/editCourse.php`
+- `ELearning/Instructor/sections.php`
+- `ELearning/Instructor/learningItems.php`
+- `ELearning/Instructor/liveSessions.php`
+- `ELearning/Instructor/students.php`
+- `ELearning/Instructor/instructorInclude/auth.php`
+
+Plan 04 can now be treated as functionally complete for the current wave.
+
+Remaining completion focus for this plan:
+
+- keep instructor-side ownership rules, live-session validation, and replay flow stable while Plan 05 extends admin review and operations
+- avoid expanding this plan into admin approval, instructor payment verification, or attendance automation
+- only apply targeted fixes here if they directly affect instructor auth, owned-course safety, live scheduling, or replay publishing
+
+Important implementation note:
+
+- this plan stops at instructor submission and instructor-side operations
+- admin approval/publishing and broader operational controls should continue in Plan 05 instead of reopening this plan
+
 ## Dependencies
 
 This plan assumes Plan 01 exists.

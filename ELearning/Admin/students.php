@@ -56,7 +56,7 @@ $studentsStmt = null;
 
 if($search !== '') {
     $studentsStmt = $conn->prepare(
-        "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email = s.stu_email AND o.status = 'TXN_SUCCESS' AND o.is_deleted = 0) AS course_count "
+        "SELECT s.*, (SELECT COUNT(*) FROM enrollment e WHERE e.student_id = s.stu_id AND e.enrollment_status = 'active') AS course_count "
         . 'FROM student s WHERE s.is_deleted = 0 AND (s.stu_name LIKE ? OR s.stu_email LIKE ?) '
         . 'ORDER BY s.stu_id DESC'
     );
@@ -66,7 +66,7 @@ if($search !== '') {
     }
 } else {
     $studentsStmt = $conn->prepare(
-        "SELECT s.*, (SELECT COUNT(*) FROM courseorder o WHERE o.stu_email = s.stu_email AND o.status = 'TXN_SUCCESS' AND o.is_deleted = 0) AS course_count "
+        "SELECT s.*, (SELECT COUNT(*) FROM enrollment e WHERE e.student_id = s.stu_id AND e.enrollment_status = 'active') AS course_count "
         . 'FROM student s WHERE s.is_deleted = 0 ORDER BY s.stu_id DESC'
     );
 }

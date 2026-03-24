@@ -29,7 +29,7 @@ if (!function_exists('learning_get_student_profile')) {
 }
 
 if (!function_exists('learning_has_course_access')) {
-    function learning_has_course_access($conn, $studentId, $stuEmail, $courseId)
+    function learning_has_course_access($conn, $studentId, $courseId)
     {
         $enrollStmt = $conn->prepare(
             "SELECT 1 FROM enrollment WHERE student_id = ? AND course_id = ? AND enrollment_status = 'active' LIMIT 1"

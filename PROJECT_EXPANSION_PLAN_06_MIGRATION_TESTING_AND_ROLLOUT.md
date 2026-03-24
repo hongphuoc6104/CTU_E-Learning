@@ -8,6 +8,58 @@ This plan explains how to implement the expansion safely without breaking the al
 
 Provide the execution order, compatibility strategy, migration strategy, and regression process for the expansion wave.
 
+## Execution Status Update
+
+Current repository status:
+
+- Plans 01 to 04 are already implemented to the point that migration/testing work can begin in parallel with Plan 05
+- this plan should not yet perform final cleanup while Plan 05 is still being implemented
+- this plan is now safe to execute as a preparation stream for testing, rollout notes, migration notes, and documentation planning
+
+This plan is ready for partial parallel execution now.
+
+Safe work to do now:
+
+- build/update regression checklist
+- build/update migration notes and compatibility checklist
+- validate seed-data coverage and documented demo scenarios
+- prepare final documentation updates and rollout gates
+
+Work that should still wait until Plan 05 stabilizes:
+
+- final legacy deprecation
+- final release signoff
+- final full-wave certification
+
+Important implementation note:
+
+- treat this plan as a safety and release-prep lane while Plan 05 remains the main implementation lane
+- do not convert this plan into a feature plan for admin/instructor/student behavior changes unless a test or rollout blocker requires a targeted fix
+
+## Preparation Lane Snapshot (Current Wave)
+
+This snapshot is intentionally preparation-only and does not certify final release.
+
+### Preparation artifacts produced now
+
+- `PLAN06_MIGRATION_BACKFILL_CHECKLIST.md`
+- `PLAN06_REGRESSION_MATRIX_EXECUTABLE.md`
+- `PLAN06_SEED_DATA_VALIDATION_SUMMARY.md`
+- `PLAN06_DOCS_UPDATE_CHECKLIST.md`
+- `PLAN06_RELEASE_GATES_AND_BLOCKERS.md`
+- `SQL/plan06_seed_validation_checks.sql`
+
+### Real blockers found during preparation
+
+- missing admin operation pages referenced in navigation and payment queue (`instructors.php`, `liveSessions.php`, `paymentDetails.php`)
+- seed data currently has enrollment records in only one status (`active`), which blocks full seed-state certification for final rollout
+
+### Explicitly deferred until Plan 05 stabilization
+
+- legacy route deprecation
+- compatibility code cleanup
+- final release signoff and full-wave certification
+
 ## Core Principle
 
 Do not attempt a big-bang rewrite.

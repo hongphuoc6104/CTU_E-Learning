@@ -16,6 +16,26 @@ Create the data foundation for:
 - instructor-owned courses
 - live sessions and replay links
 
+## Execution Status Update
+
+Current repository status while Plans 02 and 03 are already being implemented:
+
+- schema foundation has been bootstrapped in `SQL/lms_db.sql`
+- default seed data for the required demo scenarios is already present in the SQL bootstrap
+- runtime code in later plans is already consuming `enrollment`, `learning_progress`, `course_section`, `learning_item`, quiz tables, and live/replay tables
+
+Remaining completion focus for this plan:
+
+- keep this plan additive-first and avoid reopening large schema scope unless a later plan hits a real blocker
+- add a safer migration/backfill path for existing databases if rollout on top of an old DB is required
+- keep `lesson` and `courseorder` as compatibility tables during transition instead of treating them as removed
+- perform real MySQL import smoke checks when a database client/environment is available
+
+Important implementation note:
+
+- the current SQL file is already suitable as a fresh bootstrap/demo import
+- if an in-place upgrade path is needed later, it should be added as a focused migration file instead of expanding the later feature plans
+
 ## Current Baseline
 
 The current project already has:

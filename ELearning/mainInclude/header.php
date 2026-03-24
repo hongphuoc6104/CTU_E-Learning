@@ -55,6 +55,7 @@ $csrfToken = csrf_token();
                 <nav class="hidden md:flex items-center gap-8">
                     <a class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors" href="index.php">Trang chủ</a>
                     <a class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors" href="courses.php">Khóa học</a>
+                    <a class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors" href="Instructor/instructorLogin.php">Giảng viên</a>
                     <a class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors" href="index.php#Feedback">Góp ý</a>
                     <a class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors" href="index.php#Contact">Liên hệ</a>
                 </nav>

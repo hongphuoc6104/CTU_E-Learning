@@ -335,10 +335,10 @@ if (!function_exists('instructor_course_status_meta')) {
     function instructor_course_status_meta(string $status): array
     {
         $map = [
-            'draft' => ['label' => 'Bản nháp', 'class' => 'bg-slate-100 text-slate-700'],
-            'pending_review' => ['label' => 'Chờ duyệt', 'class' => 'bg-amber-100 text-amber-800'],
-            'published' => ['label' => 'Đã xuất bản', 'class' => 'bg-emerald-100 text-emerald-700'],
-            'archived' => ['label' => 'Lưu trữ', 'class' => 'bg-zinc-200 text-zinc-700'],
+            'draft' => ['label' => 'Ban nhap', 'class' => 'bg-slate-100 text-slate-700'],
+            'pending_review' => ['label' => 'Cho duyet', 'class' => 'bg-amber-100 text-amber-800'],
+            'published' => ['label' => 'Da xuat ban', 'class' => 'bg-emerald-100 text-emerald-700'],
+            'archived' => ['label' => 'Luu tru', 'class' => 'bg-zinc-200 text-zinc-700'],
         ];
 
         return $map[$status] ?? ['label' => $status, 'class' => 'bg-slate-100 text-slate-700'];
@@ -349,11 +349,11 @@ if (!function_exists('instructor_live_status_meta')) {
     function instructor_live_status_meta(string $status): array
     {
         $map = [
-            'scheduled' => ['label' => 'Sắp diễn ra', 'class' => 'bg-blue-100 text-blue-700'],
-            'live' => ['label' => 'Đang live', 'class' => 'bg-emerald-100 text-emerald-700'],
-            'ended' => ['label' => 'Đã kết thúc', 'class' => 'bg-slate-100 text-slate-700'],
-            'replay_available' => ['label' => 'Có replay', 'class' => 'bg-violet-100 text-violet-700'],
-            'cancelled' => ['label' => 'Đã huỷ', 'class' => 'bg-rose-100 text-rose-700'],
+            'scheduled' => ['label' => 'Sap dien ra', 'class' => 'bg-blue-100 text-blue-700'],
+            'live' => ['label' => 'Dang live', 'class' => 'bg-emerald-100 text-emerald-700'],
+            'ended' => ['label' => 'Da ket thuc', 'class' => 'bg-slate-100 text-slate-700'],
+            'replay_available' => ['label' => 'Co replay', 'class' => 'bg-violet-100 text-violet-700'],
+            'cancelled' => ['label' => 'Da huy', 'class' => 'bg-rose-100 text-rose-700'],
         ];
 
         return $map[$status] ?? ['label' => $status, 'class' => 'bg-slate-100 text-slate-700'];

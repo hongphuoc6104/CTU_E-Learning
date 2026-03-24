@@ -32,6 +32,26 @@ Core product shape after expansion:
 - `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md`
   - migration order, rollout, regression, release gates
 
+## Execution Status Update
+
+Current repository status for this expansion wave:
+
+- Plan 01 is already in place as the schema/bootstrap foundation
+- Plan 02 is already implemented enough for runtime commerce flow and should now be treated as a stabilization layer, not a new feature lane
+- Plan 03 is functionally complete and is already serving as the active student learning dependency
+- Plan 04 is functionally complete and now provides the instructor/course/live-session workflow required by admin operations
+- Plan 05 is the primary next implementation lane
+- Plan 06 can start in parallel only for migration notes, regression planning, test matrix, and rollout/documentation preparation
+
+Practical status summary:
+
+- `PROJECT_EXPANSION_PLAN_01_DOMAIN_AND_SCHEMA.md` -> foundation in place
+- `PROJECT_EXPANSION_PLAN_02_STOREFRONT_CART_PAYMENT.md` -> implemented, keep in stabilization mode
+- `PROJECT_EXPANSION_PLAN_03_LEARNING_EXPERIENCE.md` -> functionally complete
+- `PROJECT_EXPANSION_PLAN_04_INSTRUCTOR_AND_LIVE_CLASS.md` -> functionally complete
+- `PROJECT_EXPANSION_PLAN_05_ADMIN_OPERATIONS.md` -> ready to execute now
+- `PROJECT_EXPANSION_PLAN_06_MIGRATION_TESTING_AND_ROLLOUT.md` -> ready for partial parallel preparation only
+
 Previous audit and hardening waves are already completed and are treated as baseline context rather than active plan files in the repository.
 
 ## Global Product Scope
@@ -182,6 +202,25 @@ Safe pattern:
 - AI 6: Plan 06 at the end
 
 If using only one AI, execute the plans in strict order.
+
+## Safe Parallel Execution Now
+
+At the current project state, safe parallel work can be split like this:
+
+- Lane A: Plan 05 as the main implementation stream
+- Lane B: Plan 06 preparation stream for testing, migration notes, rollout checklist, and documentation updates
+
+Do not treat Plans 01 to 04 as new parallel feature lanes anymore.
+
+Use Plans 01 to 04 only for:
+
+- blocker fixes
+- small integration fixes
+- stabilization bugs discovered while executing Plan 05 or Plan 06
+
+Important boundary:
+
+- final cleanup, legacy deprecation, and release signoff still belong at the end of Plan 06 after Plan 05 stabilizes
 
 ## Global Non-Goals
 

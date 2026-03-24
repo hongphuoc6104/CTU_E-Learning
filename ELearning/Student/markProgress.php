@@ -49,7 +49,7 @@ $redirectWithFeedback = function ($message, $type = 'info') use ($redirectBase) 
     exit;
 };
 
-if (!learning_has_course_access($conn, $studentId, $stuEmail, $courseId)) {
+if (!learning_has_course_access($conn, $studentId, $courseId)) {
     $redirectWithFeedback('Ban chua duoc cap quyen hoc khoa nay.', 'error');
 }
 

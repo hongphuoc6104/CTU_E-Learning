@@ -2,7 +2,7 @@
 require_once(__DIR__ . '/../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../csrf.php');
-require_once(__DIR__ . '/../commerce_helpers.php');
+require_once(__DIR__ . '/admin_helpers.php');
 
 define('TITLE', 'Xác minh thanh toán');
 define('PAGE', 'payments');
@@ -14,210 +14,32 @@ if(!isset($_SESSION['is_admin_login'])){
     exit;
 }
 
-$adminEmail = (string) ($_SESSION['adminLogEmail'] ?? '');
-$adminId = null;
-$adminStmt = $conn->prepare('SELECT admin_id FROM admin WHERE admin_email = ? LIMIT 1');
-if ($adminStmt) {
-    $adminStmt->bind_param('s', $adminEmail);
-    $adminStmt->execute();
-    $adminResult = $adminStmt->get_result();
-    $adminRow = $adminResult ? $adminResult->fetch_assoc() : null;
-    $adminId = $adminRow ? (int) $adminRow['admin_id'] : null;
-    $adminStmt->close();
+$adminId = admin_find_current_id($conn);
+$statusFilter = trim((string) ($_GET['status'] ?? 'all'));
+$validStatusFilter = ['all', 'awaiting_verification', 'paid', 'failed', 'pending'];
+if (!in_array($statusFilter, $validStatusFilter, true)) {
+    $statusFilter = 'all';
 }
-
-$flash = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_action'])) {
     if(!csrf_verify($_POST['csrf_token'] ?? null)) {
-        $flash = ['type' => 'error', 'text' => 'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.'];
+        admin_set_flash('error', 'Phiên gửi biểu mẫu đã hết hạn. Vui lòng thử lại.');
     } else {
         $paymentAction = (string) $_POST['payment_action'];
         $orderId = filter_input(INPUT_POST, 'order_id', FILTER_VALIDATE_INT);
         $adminNote = trim((string) ($_POST['admin_note'] ?? ''));
-
-        if (!$orderId || !in_array($paymentAction, ['verify', 'reject'], true)) {
-            $flash = ['type' => 'error', 'text' => 'Yêu cầu xác minh thanh toán không hợp lệ.'];
-        } else {
-            $conn->begin_transaction();
-
-            try {
-                $lockStmt = $conn->prepare(
-                    'SELECT om.order_id, om.order_code, om.student_id, om.order_status, om.created_at, '
-                    . 's.stu_email, p.payment_id, p.payment_status, p.notes '
-                    . 'FROM order_master om '
-                    . 'INNER JOIN student s ON s.stu_id = om.student_id '
-                    . 'INNER JOIN payment p ON p.order_id = om.order_id '
-                    . 'WHERE om.order_id = ? AND om.is_deleted = 0 LIMIT 1'
-                );
-                if (!$lockStmt) {
-                    throw new RuntimeException('Không thể tải đơn hàng để xác minh.');
-                }
-
-                $lockStmt->bind_param('i', $orderId);
-                $lockStmt->execute();
-                $lockedResult = $lockStmt->get_result();
-                $lockedOrder = $lockedResult ? $lockedResult->fetch_assoc() : null;
-                $lockStmt->close();
-
-                if (!$lockedOrder) {
-                    throw new RuntimeException('Không tìm thấy đơn hàng cần xử lý.');
-                }
-
-                if ((string) $lockedOrder['order_status'] !== 'awaiting_verification' || (string) $lockedOrder['payment_status'] !== 'submitted') {
-                    throw new RuntimeException('Đơn hàng này không còn ở trạng thái chờ xác minh.');
-                }
-
-                $paymentId = (int) $lockedOrder['payment_id'];
-                $verifiedAt = date('Y-m-d H:i:s');
-
-                if ($paymentAction === 'verify') {
-                    $paymentStatus = 'verified';
-                    $orderStatus = 'paid';
-                    $paymentNote = $adminNote !== '' ? $adminNote : 'Admin đã xác minh thanh toán hợp lệ.';
-
-                    $updatePaymentStmt = $conn->prepare(
-                        'UPDATE payment SET payment_status = ?, verified_by_admin_id = ?, verified_at = ?, notes = ? WHERE payment_id = ? LIMIT 1'
-                    );
-                    if (!$updatePaymentStmt) {
-                        throw new RuntimeException('Không thể cập nhật payment.');
-                    }
-                    $updatePaymentStmt->bind_param('sissi', $paymentStatus, $adminId, $verifiedAt, $paymentNote, $paymentId);
-                    if (!$updatePaymentStmt->execute()) {
-                        $updatePaymentStmt->close();
-                        throw new RuntimeException('Không thể xác minh payment.');
-                    }
-                    $updatePaymentStmt->close();
-
-                    $updateOrderStmt = $conn->prepare('UPDATE order_master SET order_status = ? WHERE order_id = ? LIMIT 1');
-                    if (!$updateOrderStmt) {
-                        throw new RuntimeException('Không thể cập nhật trạng thái order.');
-                    }
-                    $updateOrderStmt->bind_param('si', $orderStatus, $orderId);
-                    if (!$updateOrderStmt->execute()) {
-                        $updateOrderStmt->close();
-                        throw new RuntimeException('Không thể đánh dấu order đã thanh toán.');
-                    }
-                    $updateOrderStmt->close();
-
-                    $itemStmt = $conn->prepare('SELECT order_item_id, course_id, unit_price FROM order_item WHERE order_id = ? ORDER BY order_item_id ASC');
-                    if (!$itemStmt) {
-                        throw new RuntimeException('Không thể tải order_item để cấp quyền học.');
-                    }
-                    $itemStmt->bind_param('i', $orderId);
-                    $itemStmt->execute();
-                    $itemsResult = $itemStmt->get_result();
-
-                    $insertEnrollmentStmt = $conn->prepare(
-                        'INSERT INTO enrollment (student_id, course_id, order_id, enrollment_status, granted_at, progress_percent) VALUES (?, ?, ?, ?, ?, 0.00)'
-                    );
-                    $updateEnrollmentStmt = $conn->prepare(
-                        'UPDATE enrollment SET order_id = ?, enrollment_status = ?, granted_at = ?, completed_at = NULL WHERE enrollment_id = ? LIMIT 1'
-                    );
-                    $findEnrollmentStmt = $conn->prepare('SELECT enrollment_id FROM enrollment WHERE student_id = ? AND course_id = ? LIMIT 1');
-                    $findLegacyOrderStmt = $conn->prepare('SELECT 1 FROM courseorder WHERE order_id = ? AND course_id = ? LIMIT 1');
-                    $insertLegacyOrderStmt = $conn->prepare(
-                        'INSERT INTO courseorder (order_id, stu_email, course_id, status, respmsg, amount, order_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
-                    );
-
-                    if (!$insertEnrollmentStmt || !$updateEnrollmentStmt || !$findEnrollmentStmt || !$findLegacyOrderStmt || !$insertLegacyOrderStmt) {
-                        $itemStmt->close();
-                        throw new RuntimeException('Không thể chuẩn bị câu lệnh cấp quyền học.');
-                    }
-
-                    $activeEnrollmentStatus = 'active';
-                    $legacyStatus = 'TXN_SUCCESS';
-                    $legacyResp = 'Verified payment';
-                    $grantedAt = $verifiedAt;
-                    $legacyOrderDate = date('Y-m-d', strtotime((string) $lockedOrder['created_at']));
-                    $stuEmail = (string) $lockedOrder['stu_email'];
-                    $lockedStudentId = (int) $lockedOrder['student_id'];
-                    $itemIndex = 0;
-
-                    while ($item = $itemsResult->fetch_assoc()) {
-                        $itemIndex++;
-                        $courseId = (int) $item['course_id'];
-                        $unitPrice = (int) $item['unit_price'];
-
-                        $findEnrollmentStmt->bind_param('ii', $lockedStudentId, $courseId);
-                        $findEnrollmentStmt->execute();
-                        $existingEnrollmentResult = $findEnrollmentStmt->get_result();
-                        $existingEnrollment = $existingEnrollmentResult ? $existingEnrollmentResult->fetch_assoc() : null;
-
-                        if ($existingEnrollment) {
-                            $enrollmentId = (int) $existingEnrollment['enrollment_id'];
-                            $updateEnrollmentStmt->bind_param('issi', $orderId, $activeEnrollmentStatus, $grantedAt, $enrollmentId);
-                            if (!$updateEnrollmentStmt->execute()) {
-                                throw new RuntimeException('Không thể cập nhật enrollment hiện có.');
-                            }
-                        } else {
-                            $insertEnrollmentStmt->bind_param('iiiss', $lockedStudentId, $courseId, $orderId, $activeEnrollmentStatus, $grantedAt);
-                            if (!$insertEnrollmentStmt->execute()) {
-                                throw new RuntimeException('Không thể tạo enrollment mới.');
-                            }
-                        }
-
-                        $legacyOrderCode = ((string) $lockedOrder['order_code']) . '-' . $itemIndex;
-                        $findLegacyOrderStmt->bind_param('si', $legacyOrderCode, $courseId);
-                        $findLegacyOrderStmt->execute();
-                        $legacyResult = $findLegacyOrderStmt->get_result();
-                        $hasLegacyOrder = $legacyResult && $legacyResult->num_rows > 0;
-
-                        if (!$hasLegacyOrder) {
-                            $insertLegacyOrderStmt->bind_param('ssissis', $legacyOrderCode, $stuEmail, $courseId, $legacyStatus, $legacyResp, $unitPrice, $legacyOrderDate);
-                            if (!$insertLegacyOrderStmt->execute()) {
-                                throw new RuntimeException('Không thể tạo bản ghi courseorder tương thích.');
-                            }
-                        }
-                    }
-
-                    $itemStmt->close();
-                    $insertEnrollmentStmt->close();
-                    $updateEnrollmentStmt->close();
-                    $findEnrollmentStmt->close();
-                    $findLegacyOrderStmt->close();
-                    $insertLegacyOrderStmt->close();
-
-                    $flash = ['type' => 'success', 'text' => 'Đã xác minh thanh toán và cấp quyền học thành công.'];
-                } else {
-                    $paymentStatus = 'rejected';
-                    $orderStatus = 'failed';
-                    $paymentNote = $adminNote !== '' ? $adminNote : 'Minh chứng thanh toán chưa hợp lệ. Học viên cần gửi lại thông tin chính xác hơn.';
-
-                    $updatePaymentStmt = $conn->prepare(
-                        'UPDATE payment SET payment_status = ?, verified_by_admin_id = ?, verified_at = ?, notes = ? WHERE payment_id = ? LIMIT 1'
-                    );
-                    if (!$updatePaymentStmt) {
-                        throw new RuntimeException('Không thể cập nhật payment bị từ chối.');
-                    }
-                    $updatePaymentStmt->bind_param('sissi', $paymentStatus, $adminId, $verifiedAt, $paymentNote, $paymentId);
-                    if (!$updatePaymentStmt->execute()) {
-                        $updatePaymentStmt->close();
-                        throw new RuntimeException('Không thể lưu kết quả từ chối payment.');
-                    }
-                    $updatePaymentStmt->close();
-
-                    $updateOrderStmt = $conn->prepare('UPDATE order_master SET order_status = ? WHERE order_id = ? LIMIT 1');
-                    if (!$updateOrderStmt) {
-                        throw new RuntimeException('Không thể cập nhật trạng thái order bị từ chối.');
-                    }
-                    $updateOrderStmt->bind_param('si', $orderStatus, $orderId);
-                    if (!$updateOrderStmt->execute()) {
-                        $updateOrderStmt->close();
-                        throw new RuntimeException('Không thể đánh dấu order thất bại.');
-                    }
-                    $updateOrderStmt->close();
-
-                    $flash = ['type' => 'success', 'text' => 'Đã từ chối thanh toán và chuyển đơn hàng sang trạng thái thất bại.'];
-                }
-
-                $conn->commit();
-            } catch (Throwable $exception) {
-                $conn->rollback();
-                $flash = ['type' => 'error', 'text' => $exception->getMessage() !== '' ? $exception->getMessage() : 'Không thể xử lý thanh toán này.'];
-            }
-        }
+        $decision = admin_process_payment_decision($conn, (int) $orderId, $paymentAction, $adminId, $adminNote);
+        admin_set_flash($decision['ok'] ? 'success' : 'error', (string) ($decision['message'] ?? 'Không thể xử lý thanh toán này.'));
     }
+
+    $redirectStatus = in_array($statusFilter, $validStatusFilter, true) ? $statusFilter : 'all';
+    echo "<script>location.href='payments.php?status=" . htmlspecialchars($redirectStatus, ENT_QUOTES, 'UTF-8') . "';</script>";
+    exit;
+}
+
+$whereSql = '';
+if ($statusFilter !== 'all') {
+    $whereSql = " AND om.order_status = '" . $conn->real_escape_string($statusFilter) . "' ";
 }
 
 $payments = $conn->query(
@@ -230,23 +52,67 @@ $payments = $conn->query(
     . 'INNER JOIN course c ON c.course_id = oi.course_id '
     . 'LEFT JOIN payment p ON p.order_id = om.order_id '
     . 'WHERE om.is_deleted = 0 '
+    . $whereSql
     . 'GROUP BY om.order_id '
     . "ORDER BY FIELD(om.order_status, 'awaiting_verification', 'pending', 'failed', 'paid', 'cancelled', 'refunded'), om.created_at DESC, om.order_id DESC"
 );
+
+$pendingCount = 0;
+$paidCount = 0;
+$failedCount = 0;
+$statsResult = $conn->query(
+    "SELECT "
+    . "SUM(CASE WHEN order_status = 'awaiting_verification' THEN 1 ELSE 0 END) AS pending_count, "
+    . "SUM(CASE WHEN order_status = 'paid' THEN 1 ELSE 0 END) AS paid_count, "
+    . "SUM(CASE WHEN order_status = 'failed' THEN 1 ELSE 0 END) AS failed_count "
+    . 'FROM order_master WHERE is_deleted = 0'
+);
+if ($statsResult) {
+    $statsRow = $statsResult->fetch_assoc();
+    $pendingCount = (int) ($statsRow['pending_count'] ?? 0);
+    $paidCount = (int) ($statsRow['paid_count'] ?? 0);
+    $failedCount = (int) ($statsRow['failed_count'] ?? 0);
+}
 ?>
 
-<?php if($flash): ?>
-<div class="mb-6 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium <?php echo $flash['type'] === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'; ?>">
-    <i class="fas <?php echo $flash['type'] === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?>"></i>
-    <span><?php echo htmlspecialchars($flash['text'], ENT_QUOTES, 'UTF-8'); ?></span>
+<div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+    <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Đang chờ xử lý</p>
+        <p class="mt-1 text-2xl font-black text-amber-600"><?php echo $pendingCount; ?></p>
+    </div>
+    <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Đã xác minh</p>
+        <p class="mt-1 text-2xl font-black text-emerald-600"><?php echo $paidCount; ?></p>
+    </div>
+    <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Đã từ chối</p>
+        <p class="mt-1 text-2xl font-black text-red-600"><?php echo $failedCount; ?></p>
+    </div>
 </div>
-<?php endif; ?>
+
+<div class="mb-5 flex flex-wrap gap-2">
+    <?php
+      $tabs = [
+        'all' => 'Tất cả',
+        'awaiting_verification' => 'Chờ xác minh',
+        'paid' => 'Đã thanh toán',
+        'failed' => 'Thất bại',
+        'pending' => 'Chờ nộp',
+      ];
+      foreach ($tabs as $tabKey => $tabLabel):
+        $isActive = $statusFilter === $tabKey;
+    ?>
+      <a href="payments.php?status=<?php echo urlencode($tabKey); ?>" class="inline-flex items-center rounded-xl border px-3 py-2 text-xs font-bold <?php echo $isActive ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'; ?>">
+        <?php echo htmlspecialchars($tabLabel, ENT_QUOTES, 'UTF-8'); ?>
+      </a>
+    <?php endforeach; ?>
+</div>
 
 <div class="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
     <div class="border-b border-slate-100 px-6 py-4 flex items-center justify-between gap-4">
         <div>
             <h2 class="text-lg font-bold text-slate-800">Hàng chờ xác minh thanh toán</h2>
-            <p class="text-sm text-slate-400 mt-1">Xử lý payment `submitted`, chuyển đơn sang `paid` hoặc `failed`, đồng thời tạo enrollment khi xác minh thành công.</p>
+            <p class="text-sm text-slate-400 mt-1">Xử lý payment `submitted`, chuyển đơn sang `paid` hoặc `failed`, và tạo enrollment theo transaction.</p>
         </div>
     </div>
 
@@ -292,6 +158,9 @@ $payments = $conn->query(
                                 <i class="fas fa-paperclip"></i> Xem minh chứng
                             </a>
                             <?php endif; ?>
+                            <a href="paymentDetails.php?order_id=<?php echo (int) ($payment['order_id'] ?? 0); ?>" class="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-primary">
+                                <i class="fas fa-eye"></i> Chi tiết
+                            </a>
                         </td>
                         <td class="px-6 py-4">
                             <span class="mb-2 inline-flex rounded-full border px-3 py-1 text-[11px] font-bold <?php echo $orderMeta['class']; ?>"><?php echo htmlspecialchars($orderMeta['label']); ?></span>
@@ -334,7 +203,7 @@ $payments = $conn->query(
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-slate-400">Chưa có đơn hàng nào để hiển thị.</td>
+                    <td colspan="7" class="px-6 py-12 text-center text-slate-400">Không có đơn hàng phù hợp bộ lọc hiện tại.</td>
                 </tr>
             <?php endif; ?>
             </tbody>

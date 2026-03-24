@@ -123,6 +123,20 @@ if ($profileImg === '') {
           <span>Trang hoc vien</span>
         </a>
       </div>
+
+      <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 pb-2 md:hidden">
+        <div class="flex min-w-0 items-center gap-2">
+          <img src="../<?php echo htmlspecialchars($profileImg, ENT_QUOTES, 'UTF-8'); ?>" alt="Instructor avatar" class="h-8 w-8 rounded-full border border-slate-200 object-cover" onerror="this.onerror=null;this.src='../image/stu/default_avatar.png'">
+          <div class="min-w-0">
+            <p class="m-0 truncate text-xs font-bold text-slate-700"><?php echo htmlspecialchars($profileName, ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="m-0 truncate text-[11px] text-slate-400"><?php echo htmlspecialchars($profileEmail, ENT_QUOTES, 'UTF-8'); ?></p>
+          </div>
+        </div>
+        <a href="logout.php" class="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-100 no-underline">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Dang xuat</span>
+        </a>
+      </div>
     </div>
   </header>
 

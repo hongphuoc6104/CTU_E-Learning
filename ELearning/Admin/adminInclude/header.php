@@ -2,6 +2,7 @@
 require_once(__DIR__ . '/../../session_bootstrap.php');
 secure_session_start();
 require_once(__DIR__ . '/../../csrf.php');
+require_once(__DIR__ . '/../admin_helpers.php');
 $csrfToken = csrf_token();
 
 // Redirect if not admin
@@ -14,6 +15,7 @@ $adminName  = explode('@', $adminEmail)[0] ?? 'Admin';
 
 $pageTitle = defined('TITLE') ? TITLE : 'Admin';
 $currentPage = defined('PAGE') ? PAGE : '';
+$adminFlash = admin_pull_flash();
 
 // Include DB connection so $conn is available for sidebar badge
 if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
@@ -100,13 +102,22 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
       <a href="courses.php" class="nav-link <?php echo ($currentPage=='courses')?'active':''; ?>">
         <i class="fas fa-layer-group"></i> Khoá học
       </a>
+      <a href="courseReview.php" class="nav-link <?php echo ($currentPage=='coursereview')?'active':''; ?>">
+        <i class="fas fa-clipboard-check"></i> Duyệt khoá học
+      </a>
       <a href="lessons.php" class="nav-link <?php echo ($currentPage=='lessons')?'active':''; ?>">
         <i class="fas fa-play-circle"></i> Bài học
       </a>
 
       <p class="nav-section">Người dùng & Phân tích</p>
+      <a href="instructors.php" class="nav-link <?php echo ($currentPage=='instructors')?'active':''; ?>">
+        <i class="fas fa-chalkboard-teacher"></i> Giảng viên
+      </a>
       <a href="students.php" class="nav-link <?php echo ($currentPage=='students')?'active':''; ?>">
         <i class="fas fa-users"></i> Học viên
+      </a>
+      <a href="liveSessions.php" class="nav-link <?php echo ($currentPage=='livesessions')?'active':''; ?>">
+        <i class="fas fa-video"></i> Phiên live
       </a>
       <a href="sellReport.php" class="nav-link <?php echo ($currentPage=='sellreport')?'active':''; ?>">
         <i class="fas fa-chart-line"></i> Doanh thu
@@ -208,3 +219,24 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
 
     <!-- Page content -->
     <main class="flex-grow p-8">
+      <?php if($adminFlash): ?>
+      <?php
+        $flashType = (string) ($adminFlash['type'] ?? 'info');
+        $flashClass = 'border-slate-200 bg-slate-50 text-slate-700';
+        $flashIcon = 'fa-info-circle';
+        if($flashType === 'success') {
+            $flashClass = 'border-green-200 bg-green-50 text-green-700';
+            $flashIcon = 'fa-check-circle';
+        } elseif($flashType === 'error') {
+            $flashClass = 'border-red-200 bg-red-50 text-red-700';
+            $flashIcon = 'fa-exclamation-circle';
+        } elseif($flashType === 'warning') {
+            $flashClass = 'border-amber-200 bg-amber-50 text-amber-700';
+            $flashIcon = 'fa-exclamation-triangle';
+        }
+      ?>
+      <div class="mb-6 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium <?php echo $flashClass; ?>">
+        <i class="fas <?php echo $flashIcon; ?>"></i>
+        <span><?php echo htmlspecialchars((string) ($adminFlash['text'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+      </div>
+      <?php endif; ?>

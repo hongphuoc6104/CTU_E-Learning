@@ -44,7 +44,7 @@ if (!$course) {
     exit;
 }
 
-$hasAccess = learning_has_course_access($conn, $studentId, $stuEmail, $courseId);
+$hasAccess = learning_has_course_access($conn, $studentId, $courseId);
 $csrfToken = csrf_token();
 
 $feedback = isset($_GET['feedback']) ? trim((string) $_GET['feedback']) : '';
