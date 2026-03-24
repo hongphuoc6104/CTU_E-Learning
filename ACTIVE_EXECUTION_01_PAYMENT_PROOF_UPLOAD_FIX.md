@@ -11,6 +11,12 @@ Current project state:
   - symptom: submitting a valid JPG/PDF payment proof shows `Khong the luu minh chung thanh toan.`
   - severity: high
 
+Latest verification status:
+- one earlier AI diagnosis pointed to upload-directory permission mismatch and added a workspace-side pre-flight check
+- however, live verification on `http://localhost/ELearning/` still fails
+- the deployed XAMPP copy and runtime upload directory are not yet confirmed green together
+- treat this workstream as still OPEN until a live retest passes end-to-end
+
 Objective:
 - Fix only the payment proof upload bug.
 
@@ -34,8 +40,9 @@ Environment assumptions:
 Required work:
 1. Reproduce the bug.
 2. Identify the real cause.
-3. Fix it safely.
-4. Retest the same upload flow.
+3. Fix it safely in the runtime that is actually being served.
+4. Retest the same upload flow on the live base URL.
+5. Do not stop at a code-only diagnosis if the deployed runtime still fails.
 
 Output format:
 - Bug fixed

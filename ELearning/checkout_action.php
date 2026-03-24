@@ -120,11 +120,22 @@ if ($hasProofUpload) {
     }
 
     $safeFileName = 'proof_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $proofExt;
-    $newProofDiskPath = __DIR__ . '/image/paymentproof/' . $safeFileName;
+    $uploadDir = __DIR__ . '/image/paymentproof/';
+    $newProofDiskPath = $uploadDir . $safeFileName;
     $newProofDbPath = 'image/paymentproof/' . $safeFileName;
 
+    // Pre-flight: ensure upload directory exists and is writable by web server
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0775, true);
+    }
+    if (!is_writable($uploadDir)) {
+        commerce_set_flash('error', 'Thư mục lưu minh chứng chưa được cấp quyền ghi. Vui lòng liên hệ quản trị viên.');
+        header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
+        exit;
+    }
+
     if (!move_uploaded_file($proofTmpName, $newProofDiskPath)) {
-        commerce_set_flash('error', 'Không thể lưu minh chứng thanh toán.');
+        commerce_set_flash('error', 'Không thể lưu minh chứng thanh toán. Vui lòng thử lại.');
         header('Location: Student/orderDetails.php?order_code=' . rawurlencode($orderCode));
         exit;
     }

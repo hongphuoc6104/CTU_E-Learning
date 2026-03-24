@@ -626,7 +626,7 @@ INSERT INTO `enrollment` (`enrollment_id`, `student_id`, `course_id`, `order_id`
 (1, 1, 1, 1, 'active', '2026-03-01 09:40:00', NULL, 42.50),
 (2, 2, 2, 2, 'active', '2026-02-20 20:30:00', '2026-03-15 09:20:00', 100.00),
 (3, 8, 5, 7, 'active', '2026-01-15 08:40:00', NULL, 82.00),
-(4, 8, 6, 7, 'active', '2026-01-15 08:40:00', '2026-02-01 20:00:00', 100.00),
+(4, 8, 6, 7, 'expired', '2026-01-15 08:40:00', '2026-02-01 20:00:00', 100.00),
 (5, 7, 2, 8, 'active', '2026-03-05 19:25:00', NULL, 63.00);
 
 INSERT INTO `learning_progress` (`progress_id`, `student_id`, `course_id`, `item_id`, `progress_status`, `last_accessed_at`, `completed_at`, `watch_percent`, `last_position_seconds`) VALUES

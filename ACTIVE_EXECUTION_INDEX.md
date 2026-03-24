@@ -7,16 +7,17 @@ Current state:
 - Plan 06 preparation lane is complete.
 - Regression batch A already ran once and reported 31/32 pass.
 - Seed gap B is closed.
+- Payment-proof fix lane C1 has been diagnosed, but the live runtime retest is still failing and the step is not closed yet.
 - Remaining work is final-lane execution only.
 
 Execution order:
 
 1. `ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md`
-   - can run now
+   - still open, run now
 2. `ACTIVE_EXECUTION_02_FRESH_IMPORT_SEED_RERUN.md`
-   - can run in parallel with step 1 if it uses a fresh import / isolated test state
+   - still open, can run in parallel with step 1 if it uses a fresh import / isolated test state
 3. `ACTIVE_EXECUTION_03_PAYMENT_PROOF_RETEST.md`
-   - run after step 1
+   - run only after step 1 is verified green on the live runtime
 4. `ACTIVE_EXECUTION_04_RELEASE_GATES_CLOSURE.md`
    - run after steps 2 and 3
 5. `ACTIVE_EXECUTION_05_FINAL_CLEANUP_IF_APPROVED.md`

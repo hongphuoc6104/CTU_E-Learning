@@ -73,16 +73,16 @@ $proofPath = $proofUrl !== '' ? '../' . ltrim($proofUrl, '/') : '';
 $isImageProof = $proofUrl !== '' && preg_match('/\.(jpg|jpeg|png|webp)$/i', $proofUrl) === 1;
 ?>
 
-<div class="max-w-7xl mx-auto px-6 py-12">
-    <div class="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div class="mb-6 sm:mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <a href="myOrders.php" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-primary">
+            <a href="myOrders.php" class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-500 transition-colors hover:text-primary">
                 <i class="fas fa-arrow-left"></i> Quay lại danh sách đơn hàng
             </a>
-            <h1 class="mt-3 text-3xl font-black text-slate-900 flex items-center gap-3">
+            <h1 class="mt-2 sm:mt-3 text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
                 <i class="fas fa-file-invoice-dollar text-primary"></i> Đơn hàng <?php echo htmlspecialchars((string) $order['order_code']); ?>
             </h1>
-            <p class="mt-2 text-slate-500">Theo dõi trạng thái thanh toán và hoàn tất việc gửi minh chứng cho admin xác minh.</p>
+            <p class="mt-1 sm:mt-2 text-sm text-slate-500">Theo dõi trạng thái thanh toán và hoàn tất việc gửi minh chứng.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <span class="rounded-full border px-3 py-1 text-xs font-bold <?php echo $orderMeta['class']; ?>"><?php echo htmlspecialchars($orderMeta['label']); ?></span>
@@ -97,9 +97,9 @@ $isImageProof = $proofUrl !== '' && preg_match('/\.(jpg|jpeg|png|webp)$/i', $pro
     </div>
     <?php endif; ?>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.9fr)]">
-        <section class="space-y-6">
-            <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.9fr)]">
+        <section class="space-y-4 sm:space-y-6">
+            <div class="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
                 <div class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Ngày tạo</p>
                     <p class="mt-2 text-lg font-black text-slate-900"><?php echo htmlspecialchars(date('H:i d/m/Y', strtotime((string) $order['created_at']))); ?></p>
@@ -122,7 +122,7 @@ $isImageProof = $proofUrl !== '' && preg_match('/\.(jpg|jpeg|png|webp)$/i', $pro
                 <div class="space-y-4">
                     <?php if($items && $items->num_rows > 0): ?>
                         <?php while($item = $items->fetch_assoc()): ?>
-                        <div class="flex flex-col gap-4 rounded-2xl border border-slate-100 p-4 md:flex-row md:items-center">
+                <div class="flex flex-col gap-3 sm:gap-4 rounded-2xl border border-slate-100 p-3 sm:p-4 md:flex-row md:items-center">
                             <a href="../coursedetails.php?course_id=<?php echo (int) $item['course_id']; ?>" class="shrink-0">
                                 <img src="../<?php echo ltrim(str_replace('../', '', (string) $item['course_img']), '/'); ?>" class="h-20 w-32 rounded-xl object-cover" alt="Course image">
                             </a>

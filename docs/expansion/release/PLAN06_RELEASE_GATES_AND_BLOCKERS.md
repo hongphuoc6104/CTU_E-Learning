@@ -14,12 +14,12 @@ This document does not grant final release approval.
 |---|---|---|---|
 | G1 Schema import | Fresh import from `SQL/lms_db.sql` succeeds | READY (prep) | Plan 01 baseline |
 | G2 Seed dataset readiness | Required curated seed categories present | READY | Plan 06 prep |
-| G3 Guest/student baseline regression | Core browse/auth/learning smoke green | READY TO EXECUTE | Plan 06 prep |
-| G4 Instructor operations regression | Draft->content->live->replay->submit review paths green | READY TO EXECUTE | Plan 04/06 |
+| G3 Guest/student baseline regression | Core browse/auth/learning smoke green | PARTIAL - regression batch run, payment-proof bug still open | Plan 06 final lane |
+| G4 Instructor operations regression | Draft->content->live->replay->submit review paths green | PARTIAL - seed-sensitive rerun still pending | Plan 06 final lane |
 | G5 Admin operations completeness | review + payment + instructor mgmt + live oversight + details pages available | READY TO VERIFY | Plan 05 stabilization |
 | G6 Reporting alignment | revenue/transactions aligned with paid-order reality and migration strategy | READY TO VERIFY | Plan 05 stabilization |
 | G7 Compatibility safety | Legacy and new paths coexist without regression | READY (no cleanup applied) | Plan 06 prep |
-| G8 Full regression matrix | `docs/expansion/release/PLAN06_REGRESSION_MATRIX_EXECUTABLE.md` all critical items pass | NOT RUN (prep phase) | Plan 06 final lane |
+| G8 Full regression matrix | `docs/expansion/release/PLAN06_REGRESSION_MATRIX_EXECUTABLE.md` all critical items pass | PARTIAL - first batch 31/32, reruns still pending | Plan 06 final lane |
 | G9 Final cleanup/deprecation | remove/redirect legacy paths safely after verification | NOT ALLOWED YET | Plan 06 final lane |
 | G10 Final signoff | full-wave certification and release approval | NOT ALLOWED YET | Final lane |
 
@@ -46,6 +46,17 @@ Impact:
 
 - Final certification still requires fresh-import validation evidence, not just prepared scripts and updated seed rows.
 
+### B4 Payment proof upload bug still open on live runtime (high-severity blocker)
+
+- Route: `/ELearning/checkout_action.php`
+- Entry flow: `/ELearning/Student/orderDetails.php`
+- Current observed result: valid JPG/PDF upload still returns the save-error state on the live web runtime.
+
+Impact:
+
+- Student commerce regression cannot be marked green.
+- Blocks trustworthy closure of G3 and G8 until the live runtime retest passes.
+
 ## Allowed Actions While Blocked
 
 - Continue preparing migration notes/checklists and validation scripts.
@@ -62,5 +73,6 @@ Impact:
 
 1. Plan 05 delivers stabilized admin operations coverage and signoff.
 2. Admin/reporting verification is regression-tested and evidenced.
-3. Full regression matrix passes on fresh import.
-4. Rollout/signoff evidence is collected and reviewed.
+3. Payment proof upload bug is fixed and retested green on the live runtime.
+4. Full regression matrix passes on fresh import.
+5. Rollout/signoff evidence is collected and reviewed.

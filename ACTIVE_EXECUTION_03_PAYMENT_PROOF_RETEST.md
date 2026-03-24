@@ -3,7 +3,7 @@
 Standalone AI handoff file.
 
 Precondition:
-- Run this only after `ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md` is completed.
+- Run this only after `ACTIVE_EXECUTION_01_PAYMENT_PROOF_UPLOAD_FIX.md` is completed and verified green on `http://localhost/ELearning/`.
 
 Objective:
 - Rerun the proof-related regression subset affected by the payment proof upload bug.

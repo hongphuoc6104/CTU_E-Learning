@@ -9,6 +9,7 @@ Current project state:
   - expected seeded instructor-owned `draft` and `pending_review` courses
   - result looked inconsistent during the earlier run
 - There is strong suspicion this was environment state drift, not a true seed gap.
+- Seed-gap lane B already closed the enrollment-state diversity blocker, so this rerun is now focused only on verifying the instructor-state case under a clean import.
 
 Objective:
 - Run a fresh-import, seed-sensitive rerun to decide whether the prior failure was a real seed problem or only test-environment mutation.

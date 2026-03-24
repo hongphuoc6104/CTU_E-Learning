@@ -8,11 +8,12 @@ Generated: 2026-03-24
 - Plan 06 preparation lane is complete.
 - Regression lane A has already run one full batch and reported `31/32` pass.
 - Seed-gap lane B has already closed the enrollment-state diversity blocker.
+- C1 has partial diagnosis only; the live runtime proof-upload retest is still failing, so the bug-fix lane remains open.
 
 ## Confirmed Open Items
 
 1. Real bug to fix:
-   - payment proof file upload fails in `ELearning/checkout_action.php`
+    - payment proof file upload fails in `ELearning/checkout_action.php`
 2. Seed-sensitive rerun still needed on fresh import:
    - verify instructor-owned `draft` and `pending_review` seed courses exist before any state-mutating tests
 3. Regression evidence and release-gate docs still need to be updated with final verified results
@@ -81,13 +82,13 @@ Only start if:
 
 - C1 can run now.
 - A2 can also run now on a fresh import if it does not mutate the same test environment used by C1.
-- C2 must wait for C1.
+- C2 must wait for C1 to be verified green on the live runtime.
 - D must wait for C2 and A2.
 - E must wait for D and owner confirmation.
 
 ## Tracking Board
 
-- [ ] C1 Fix payment proof upload bug
+- [ ] C1 Fix payment proof upload bug and verify it on live runtime
 - [ ] C2 Rerun payment-proof regression subset
 - [ ] A2 Rerun seed-sensitive instructor case on fresh import
 - [ ] D Update release gates and docs from verified evidence

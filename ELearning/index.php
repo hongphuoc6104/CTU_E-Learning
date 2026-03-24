@@ -10,28 +10,28 @@
   $studentId = $stuEmail !== '' ? commerce_get_student_id($conn, $stuEmail) : null;
 ?>  
 <!-- Hero Section -->
-<section class="pt-40 pb-24 hero-pattern px-6">
-<div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-<div class="space-y-8">
+<section class="pt-28 sm:pt-40 pb-16 sm:pb-24 hero-pattern px-4 sm:px-6">
+<div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+<div class="space-y-6 sm:space-y-8">
 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
 <i class="fas fa-star text-xs"></i>
                     Nền tảng học tập số 1
                 </div>
-<h1 class="text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight mb-4">
-                    Chào mừng đến với<br><span class="text-primary whitespace-nowrap">CTU E-Learning</span>
+<h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight mb-4">
+                    Chào mừng đến với<br><span class="text-primary">CTU E-Learning</span>
 </h1>
-<p class="text-xl text-slate-600 leading-relaxed max-w-xl mb-8 mt-4">
+<p class="text-base sm:text-xl text-slate-600 leading-relaxed max-w-xl mb-6 sm:mb-8 mt-3 sm:mt-4">
                     Nâng cao kỹ năng thiết kế và sản xuất truyền thông đa phương tiện cùng đội ngũ chuyên gia hàng đầu. Bắt đầu hành trình sáng tạo của bạn ngay hôm nay.
                 </p>
-<div class="flex flex-wrap gap-4 mt-8">
+<div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 mt-6 sm:mt-8">
     <?php    
         if(!isset($_SESSION['is_login'])){
-        echo '<a class="px-8 py-4 bg-primary text-white font-bold rounded-xl hover:translate-y-[-2px] transition-all shadow-xl shadow-primary/30 flex items-center gap-2 hover:text-white no-underline border-0" href="signup.php">Bắt đầu ngay <i class="fas fa-arrow-right"></i></a>';
+        echo '<a class="px-6 sm:px-8 py-3 sm:py-4 bg-primary text-white font-bold rounded-xl hover:translate-y-[-2px] transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-2 hover:text-white no-underline border-0 text-sm sm:text-base" href="signup.php">Bắt đầu ngay <i class="fas fa-arrow-right"></i></a>';
         } else {
-        echo '<a class="px-8 py-4 bg-primary text-white font-bold rounded-xl hover:translate-y-[-2px] transition-all shadow-xl shadow-primary/30 flex items-center gap-2 hover:text-white no-underline border-0" href="Student/studentProfile.php">Hồ sơ của tôi <i class="fas fa-arrow-right"></i></a>';
+        echo '<a class="px-6 sm:px-8 py-3 sm:py-4 bg-primary text-white font-bold rounded-xl hover:translate-y-[-2px] transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-2 hover:text-white no-underline border-0 text-sm sm:text-base" href="Student/studentProfile.php">Hồ sơ của tôi <i class="fas fa-arrow-right"></i></a>';
         }
     ?> 
-    <a class="px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all no-underline flex items-center justify-center" href="courses.php">Khám phá khóa học</a>
+    <a class="px-6 sm:px-8 py-3 sm:py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all no-underline flex items-center justify-center text-sm sm:text-base" href="courses.php">Khám phá khóa học</a>
 </div>
 </div>
 <div class="relative">
@@ -46,9 +46,9 @@
 </section>
 
 <!-- Features Band -->
-<section class="py-12 bg-white border-y border-slate-100">
-<div class="max-w-7xl mx-auto px-6">
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+<section class="py-8 sm:py-12 bg-white border-y border-slate-100">
+<div class="max-w-7xl mx-auto px-4 sm:px-6">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
 <div class="flex items-center gap-4">
 <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
 <i class="fas fa-video text-3xl"></i>
@@ -90,19 +90,19 @@
 </section>
 
 <!-- Popular Courses -->
-<section class="py-24 px-6 bg-background-light">
+<section class="py-16 sm:py-24 px-4 sm:px-6 bg-background-light">
 <div class="max-w-7xl mx-auto">
-<div class="flex justify-between items-end mb-12">
+<div class="flex flex-col sm:flex-row justify-between sm:items-end mb-8 sm:mb-12 gap-4">
 <div>
-<h2 class="text-3xl font-black text-slate-900 m-0">Khoá học nổi bật</h2>
-<div class="h-1.5 w-20 bg-primary mt-4 rounded-full"></div>
+<h2 class="text-2xl sm:text-3xl font-black text-slate-900 m-0">Khoá học nổi bật</h2>
+<div class="h-1.5 w-20 bg-primary mt-3 sm:mt-4 rounded-full"></div>
 </div>
-<a class="text-primary font-bold hover:underline flex items-center gap-2" href="courses.php">
+<a class="text-primary font-bold hover:underline flex items-center gap-2 text-sm sm:text-base" href="courses.php">
                     Xem tất cả <i class="fas fa-chevron-right"></i>
 </a>
 </div>
 
-<div class="grid md:grid-cols-3 gap-8 mb-8">
+<div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8">
 <?php
 $courses = [];
 $courseIds = [];
@@ -182,13 +182,13 @@ if(!empty($courses)){
 </section>
 
 <!-- Student Feedback -->
-<section class="py-24 px-6 bg-white overflow-hidden" id="Feedback">
+<section class="py-16 sm:py-24 px-4 sm:px-6 bg-white overflow-hidden" id="Feedback">
 <div class="max-w-7xl mx-auto">
-<div class="text-center mb-16">
-<h2 class="text-3xl font-black text-slate-900 m-0">Góp ý của học viên</h2>
-<p class="text-slate-500 mt-4 text-lg">Chia sẻ từ những học viên đã thay đổi sự nghiệp cùng CTU E-Learning</p>
+<div class="text-center mb-10 sm:mb-16">
+<h2 class="text-2xl sm:text-3xl font-black text-slate-900 m-0">Góp ý của học viên</h2>
+<p class="text-slate-500 mt-3 sm:mt-4 text-base sm:text-lg">Chia sẻ từ những học viên đã thay đổi sự nghiệp cùng CTU E-Learning</p>
 </div>
-<div class="grid md:grid-cols-3 gap-8 gap-y-16 relative">
+<div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 gap-y-12 sm:gap-y-16 relative">
 <?php 
   $sql = "SELECT s.stu_name, s.stu_occ, s.stu_img, f.f_content FROM student AS s JOIN feedback AS f ON s.stu_id = f.stu_id WHERE f.is_deleted=0 AND s.is_deleted=0 LIMIT 6";
   $result = $conn->query($sql);

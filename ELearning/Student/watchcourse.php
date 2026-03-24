@@ -297,6 +297,20 @@ $currentIsCompleted = $currentItem
             background: rgba(148, 163, 184, 0.5);
             border-radius: 9999px;
         }
+
+        /* Mobile sidebar overlay */
+        #sidebarOverlay {
+            transition: opacity 0.3s ease;
+        }
+        #sidebarOverlay.hidden { display: none; }
+
+        #mobileSidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        #mobileSidebar.open {
+            transform: translateX(0);
+        }
     </style>
 </head>
 <body class="min-h-screen text-slate-100">
@@ -305,22 +319,27 @@ $currentIsCompleted = $currentItem
         <div class="flex min-w-0 items-center gap-3">
             <a
                 href="myCourse.php"
-                class="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-white/90 transition hover:border-white/30 hover:text-white"
+                class="inline-flex items-center gap-2 rounded-lg border border-white/15 px-2 sm:px-3 py-2 text-xs font-semibold text-white/90 transition hover:border-white/30 hover:text-white"
             >
                 <i class="fas fa-arrow-left"></i>
-                <span>Khoa hoc cua toi</span>
+                <span class="hidden sm:inline">Khoa hoc cua toi</span>
             </a>
             <div class="min-w-0">
                 <p class="truncate text-sm font-semibold text-white md:text-base"><?php echo htmlspecialchars($courseName, ENT_QUOTES, 'UTF-8'); ?></p>
                 <p class="truncate text-xs text-white/60"><?php echo htmlspecialchars((string) ($course['course_author'] ?? 'Giang vien'), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
         </div>
-        <div class="flex shrink-0 items-center gap-3">
+        <div class="flex shrink-0 items-center gap-2 sm:gap-3">
+            <!-- Mobile sidebar toggle -->
+            <button type="button" id="toggleSidebarBtn" class="lg:hidden inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-white/90 transition hover:border-white/30 hover:text-white bg-transparent cursor-pointer">
+                <i class="fas fa-list"></i>
+                <span class="hidden sm:inline">Mục lục</span>
+            </button>
             <img
                 src="<?php echo htmlspecialchars($studentImg ?: '../image/stu/default_avatar.png', ENT_QUOTES, 'UTF-8'); ?>"
                 onerror="this.onerror=null;this.src='../image/stu/default_avatar.png';"
                 alt="Student avatar"
-                class="h-9 w-9 rounded-full border border-white/20 object-cover"
+                class="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-white/20 object-cover"
             >
             <span class="hidden text-sm font-medium text-white/80 sm:block"><?php echo htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
@@ -405,10 +424,19 @@ $currentIsCompleted = $currentItem
             </section>
         <?php else: ?>
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[360px,1fr]">
-                <aside class="flex max-h-[calc(100vh-250px)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80">
-                    <div class="border-b border-white/10 px-4 py-3">
-                        <h2 class="text-sm font-bold text-white">Lo trinh hoc theo section</h2>
-                        <p class="mt-1 text-xs text-white/50"><?php echo count($allItems); ?> learning item</p>
+                <!-- Mobile sidebar overlay -->
+                <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="closeSidebar()"></div>
+
+                <!-- Sidebar (desktop: inline, mobile: overlay) -->
+                <aside id="mobileSidebar" class="fixed inset-y-0 left-0 z-50 w-[320px] flex flex-col overflow-hidden bg-slate-900 lg:static lg:z-auto lg:w-auto lg:transform-none lg:rounded-2xl lg:border lg:border-white/10 lg:bg-slate-900/80 max-h-screen lg:max-h-[calc(100vh-250px)]">
+                    <div class="border-b border-white/10 px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-bold text-white">Lo trinh hoc theo section</h2>
+                            <p class="mt-1 text-xs text-white/50"><?php echo count($allItems); ?> learning item</p>
+                        </div>
+                        <button type="button" class="lg:hidden text-white/60 hover:text-white p-1 bg-transparent border-0 cursor-pointer" onclick="closeSidebar()">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
                     </div>
                     <div class="custom-scrollbar flex-1 overflow-y-auto px-2 py-2">
                         <?php foreach ($sections as $section): ?>
@@ -996,6 +1024,25 @@ $currentIsCompleted = $currentItem
             </div>
         <?php endif; ?>
     <?php endif; ?>
-</div>
+<script>
+function openSidebar() {
+    var sidebar = document.getElementById('mobileSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+    var sidebar = document.getElementById('mobileSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+var toggleBtn = document.getElementById('toggleSidebarBtn');
+if (toggleBtn) {
+    toggleBtn.addEventListener('click', openSidebar);
+}
+</script>
 </body>
 </html>

@@ -87,7 +87,12 @@
         </div>
         <div>
           <label for="adminLogPass" class="mb-1.5 block text-sm font-semibold text-slate-700">Mật khẩu</label>
-          <input type="password" id="adminLogPass" name="adminLogPass" placeholder="Nhập mật khẩu" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10">
+          <div class="relative">
+            <input type="password" id="adminLogPass" name="adminLogPass" placeholder="Nhập mật khẩu" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/10">
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors border-0 bg-transparent p-1 cursor-pointer" id="toggleAdminPass" aria-label="Hiện/ẩn mật khẩu">
+              <i class="fas fa-eye" id="toggleAdminPassIcon"></i>
+            </button>
+          </div>
         </div>
       </form>
       <small id="statusAdminLogMsg" class="mt-4 block min-h-5 text-sm font-medium text-slate-500"></small>
@@ -172,6 +177,19 @@
       loginForm.addEventListener('submit', (event) => {
         event.preventDefault();
         loginBtn.click();
+      });
+    }
+
+    // Admin password show/hide toggle
+    const toggleAdminPass = document.getElementById('toggleAdminPass');
+    const adminPassInput = document.getElementById('adminLogPass');
+    const toggleAdminPassIcon = document.getElementById('toggleAdminPassIcon');
+    if (toggleAdminPass && adminPassInput && toggleAdminPassIcon) {
+      toggleAdminPass.addEventListener('click', () => {
+        const isPassword = adminPassInput.type === 'password';
+        adminPassInput.type = isPassword ? 'text' : 'password';
+        toggleAdminPassIcon.classList.toggle('fa-eye', !isPassword);
+        toggleAdminPassIcon.classList.toggle('fa-eye-slash', isPassword);
       });
     }
   })();

@@ -9,6 +9,9 @@ Bat buoc doc:
 3. `docs/expansion/release/PLAN06_REGRESSION_MATRIX_EXECUTABLE.md`
 4. `docs/expansion/release/PLAN06_NEXT_STEPS_TRACKER.md`
 
+Precondition that:
+- C1 da duoc xac nhan xanh tren `http://localhost/ELearning/`
+
 Muc tieu:
 - rerun subset regression bi anh huong boi bug payment proof upload sau khi C1 xong
 

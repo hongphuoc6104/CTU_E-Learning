@@ -50,7 +50,8 @@ This snapshot is intentionally preparation-only and does not certify final relea
 
 ### Real blockers found during preparation
 
-- final regression matrix has not been fully executed and certified yet
+- one full regression batch has run and reported `31/32` pass, but final regression evidence is not complete yet
+- a real high-severity runtime bug remains open: payment proof file upload still fails on the live student payment flow
 - rollout signoff evidence has not been collected yet
 - seed-state diversity blocker is now closed in SQL seed, but fresh-import regression evidence is still required for final rollout certification
 

@@ -34,18 +34,18 @@
   include('./mainInclude/header.php'); 
 ?>  
 <!-- Page Header Header -->
-<div class="pt-32 pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
+<div class="pt-24 sm:pt-32 pb-12 sm:pb-16 bg-gradient-to-br from-primary to-slate-900 border-b border-primary/20 relative overflow-hidden">
     <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_60%)]"></div>
     <div class="absolute inset-0 bg-primary/40"></div>
-    <div class="max-w-7xl mx-auto px-6 relative z-10">
-        <a href="courses.php" class="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6 transition-colors font-medium">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+        <a href="courses.php" class="inline-flex items-center gap-2 text-white/80 hover:text-white mb-4 sm:mb-6 transition-colors font-medium text-sm">
             <i class="fas fa-arrow-left"></i> Quay lại Danh sách Khoá học
         </a>
-        <h1 class="text-3xl md:text-5xl font-black text-white mb-4">Chi Tiết Khóa Học</h1>
+        <h1 class="text-2xl sm:text-3xl md:text-5xl font-black text-white mb-3 sm:mb-4">Chi Tiết Khóa Học</h1>
     </div>
 </div>
 
-<section class="py-16 px-6 bg-background-light min-h-screen">
+<section class="py-10 sm:py-16 px-4 sm:px-6 bg-background-light min-h-screen pb-24 md:pb-16">
     <div class="max-w-7xl mx-auto">
         <?php $commerceFlash = commerce_pull_flash(); ?>
         <?php if($commerceFlash): ?>
@@ -148,13 +148,13 @@
 
         ?>   
 
-        <!-- Lesson List -->
-        <div class="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-slate-100">
-            <h3 class="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+        <!-- Lesson List (Accordion) -->
+        <div class="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-12 shadow-sm border border-slate-100">
+            <h3 class="text-xl sm:text-2xl font-black text-slate-900 mb-6 sm:mb-8 flex items-center gap-3">
                 <i class="fas fa-list-ul text-primary"></i> Lộ trình bài học
             </h3>
             
-            <div class="overflow-x-auto">
+            <div class="space-y-2" id="lessonAccordion">
                 <?php 
                     $lessonStmt = $conn->prepare('SELECT lesson_name FROM lesson WHERE course_id = ? AND is_deleted = 0 ORDER BY lesson_id');
                     if($lessonStmt) {
@@ -165,30 +165,35 @@
                         $result = false;
                     }
                     if($result && $result->num_rows > 0){
-                        echo '
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 border-b-2 border-slate-100">
-                                    <th class="py-4 px-6 font-bold text-slate-700 w-24">Bài số</th>
-                                    <th class="py-4 px-6 font-bold text-slate-700">Tên bài học</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">';
-                        
                         $num = 0;
+                        $totalLessons = $result->num_rows;
                         while($row = $result->fetch_assoc()){
-                                $num++;
-                                echo ' 
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="py-4 px-6 font-semibold text-primary">'.$num.'</td>
-                                    <td class="py-4 px-6 text-slate-700 font-medium">'. htmlspecialchars($row["lesson_name"], ENT_QUOTES, "UTF-8").'</td>
-                                </tr>';
+                            $num++;
+                            $lessonNameSafe = htmlspecialchars($row['lesson_name'], ENT_QUOTES, 'UTF-8');
+                            echo '
+                            <div class="border border-slate-100 rounded-xl hover:border-slate-200 transition-colors">
+                                <div class="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4">
+                                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                                        '.$num.'
+                                    </div>
+                                    <div class="flex-grow min-w-0">
+                                        <p class="text-sm sm:text-base font-semibold text-slate-800 truncate">'.$lessonNameSafe.'</p>
+                                    </div>
+                                    <i class="fas fa-check-circle text-slate-200 shrink-0"></i>
+                                </div>
+                            </div>';
                         }
-                        echo '
-                            </tbody>
-                        </table>';
+                        echo '<div class="mt-4 text-sm text-slate-500 text-center">
+                            <i class="fas fa-book-open mr-1"></i> Tổng cộng '.$totalLessons.' bài học
+                        </div>';
                     } else {
-                        echo '<p class="text-slate-500 text-center py-8">Chưa có bài học nào được tải lên.</p>';
+                        echo '<div class="text-center py-10">
+                            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-inbox text-2xl text-primary/50"></i>
+                            </div>
+                            <p class="text-slate-500 font-medium">Chưa có bài học nào được tải lên.</p>
+                            <p class="text-xs text-slate-400 mt-1">Nội dung sẽ sớm được cập nhật.</p>
+                        </div>';
                     }
                     if($lessonStmt) {
                         $lessonStmt->close();
@@ -196,6 +201,29 @@
                 ?>         
             </div>
         </div>
+
+        <!-- Sticky CTA on mobile -->
+        <?php
+        // Rebuild state for sticky bar
+        if(!$courseState['is_enrolled'] && !$courseState['has_open_order'] && isset($_SESSION['is_login']) && $_SESSION['is_login']):
+        ?>
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40 md:hidden">
+            <div class="flex items-center justify-between gap-3 max-w-7xl mx-auto">
+                <div>
+                    <p class="text-xs text-slate-400 line-through"><?php echo $original_price; ?> đ</p>
+                    <p class="text-lg font-black text-red-600 leading-none"><?php echo $price; ?> đ</p>
+                </div>
+                <form action="checkout.php" method="post" class="m-0">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="course_id" value="<?php echo $course_id; ?>">
+                    <input type="hidden" name="checkout_type" value="single">
+                    <button type="submit" class="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 border-0 text-sm">
+                        Đăng ký ngay <i class="fas fa-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>  
 </section>  
      <?php 

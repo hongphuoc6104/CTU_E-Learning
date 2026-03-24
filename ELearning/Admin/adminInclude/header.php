@@ -62,6 +62,18 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
     .stat-card { position:relative; overflow:hidden; }
     .stat-card::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.04),transparent); pointer-events:none; }
 
+    /* Mobile sidebar */
+    @media (max-width: 1023px) {
+      #adminSidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      #adminSidebar.open {
+        transform: translateX(0);
+      }
+      .ml-64 { margin-left: 0 !important; }
+    }
+
     @media print {
       aside, header { display: none !important; }
       .ml-64 { margin-left: 0 !important; }
@@ -74,8 +86,11 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
 <!-- LAYOUT -->
 <div class="flex min-h-screen">
 
+  <!-- Mobile sidebar overlay -->
+  <div id="adminSidebarOverlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden" onclick="closeAdminSidebar()"></div>
+
   <!-- ===== SIDEBAR ===== -->
-  <aside class="w-64 bg-sidebar fixed top-0 left-0 h-screen flex flex-col z-40 shrink-0 print:hidden"
+  <aside id="adminSidebar" class="w-64 bg-sidebar fixed top-0 left-0 h-screen flex flex-col z-40 shrink-0 print:hidden"
          style="background: linear-gradient(180deg,#001f40 0%,#002a55 100%); border-right:1px solid rgba(16,185,129,.12);">
 
     <!-- Brand -->
@@ -198,15 +213,19 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
   </aside>
 
   <!-- ===== MAIN CONTENT AREA ===== -->
-  <div class="ml-64 flex-grow flex flex-col min-h-screen print:ml-0">
+  <div class="lg:ml-64 flex-grow flex flex-col min-h-screen print:ml-0">
 
     <!-- Top bar -->
     <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 print:hidden"
             style="border-bottom:1px solid rgba(79,70,229,.08);">
-      <div class="px-8 py-3.5 flex items-center justify-between">
-        <div>
-          <h1 class="text-base font-bold text-slate-800 leading-none"><?php echo $pageTitle; ?></h1>
-          <p class="text-xs text-slate-400 mt-0.5"><?php echo date('l, d/m/Y'); ?></p>
+      <div class="px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3">
+        <!-- Mobile sidebar toggle -->
+        <button type="button" id="adminSidebarToggle" class="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors bg-transparent cursor-pointer">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="flex-grow min-w-0">
+          <h1 class="text-sm sm:text-base font-bold text-slate-800 leading-none truncate"><?php echo $pageTitle; ?></h1>
+          <p class="text-xs text-slate-400 mt-0.5 hidden sm:block"><?php echo date('l, d/m/Y'); ?></p>
         </div>
         <div class="flex items-center gap-3">
           <a href="../index.php" target="_blank"
@@ -218,7 +237,7 @@ if(!isset($conn)) include(dirname(__DIR__, 1).'/../dbConnection.php');
     </header>
 
     <!-- Page content -->
-    <main class="flex-grow p-8">
+    <main class="flex-grow p-4 sm:p-8">
       <?php if($adminFlash): ?>
       <?php
         $flashType = (string) ($adminFlash['type'] ?? 'info');

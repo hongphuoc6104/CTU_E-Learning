@@ -9,6 +9,11 @@ Bat buoc doc:
 3. `docs/expansion/release/PLAN06_NEXT_STEPS_TRACKER.md`
 4. regression result summary da co
 
+Trang thai moi nhat can ton trong:
+- da co mot luot chan doan truoc do
+- nhung live runtime tren `http://localhost/ELearning/` van fail
+- chi duoc xem la xong khi retest tren runtime dang serve da xanh
+
 Bug can sua:
 - Route: `/ELearning/checkout_action.php`
 - Entry flow: `/ELearning/Student/orderDetails.php`
@@ -26,7 +31,8 @@ Yeu cau:
 - tim nguyen nhan that su (path, permission, upload handling, runtime save path, validation, Apache/XAMPP behavior, etc.)
 - sua gon, an toan
 - neu can them runtime-safe guardrail thi duoc, nhung khong doi business flow
-- sau khi sua, rerun ngay case upload proof lien quan neu moi truong cho phep
+- sau khi sua, rerun ngay case upload proof tren live runtime dang duoc serve
+- khong dung lai o muc code-only diagnosis neu web runtime van do
 
 Tra ket qua theo format:
 - Bug fixed

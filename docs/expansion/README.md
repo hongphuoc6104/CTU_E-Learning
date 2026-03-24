@@ -6,5 +6,6 @@
 - `docs/expansion/release/` stores the active rollout, regression, and release-prep docs.
 - `docs/expansion/release/PLAN06_NEXT_STEPS_TRACKER.md` tracks the remaining final-lane execution order and reusable prompts.
 - `docs/expansion/release/prompts/` stores standalone handoff prompts for parallel AI lanes.
+- completed non-expansion execution plans can be archived under `docs/completed/`.
 
 Keep product/runtime files in the repository root and under `ELearning/`.

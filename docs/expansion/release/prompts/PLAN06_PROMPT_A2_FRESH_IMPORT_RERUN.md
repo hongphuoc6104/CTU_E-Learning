@@ -15,6 +15,10 @@ Muc tieu:
 - rerun rieng nhom case seed-sensitive truoc khi tao them du lieu test moi
 - xac minh fail truoc do ve instructor-owned `draft` / `pending_review` la do seed gap hay do environment state drift
 
+Luu y:
+- blocker seed enrollment-state diversity da dong
+- lane nay chi con xac minh instructor seed-state case tren fresh import
+
 Bat buoc test lai:
 - login `ngoc.creator@example.com` / `instructor123`
 - login `chau.instructor@example.com` / `instructor123`

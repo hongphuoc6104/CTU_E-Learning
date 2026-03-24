@@ -22,13 +22,13 @@ commerce_cleanup_cart($conn, $stuEmail);
 $commerceFlash = commerce_pull_flash();
 ?>
 
-<div class="max-w-4xl mx-auto px-6 py-12">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <!-- Page title -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-black text-slate-900 flex items-center gap-3">
+    <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
             <i class="fas fa-shopping-cart text-primary"></i> Giỏ hàng của bạn
         </h1>
-        <p class="text-slate-500 mt-2">Kiểm tra lại các khóa học trước khi thanh toán.</p>
+        <p class="text-sm sm:text-base text-slate-500 mt-2">Kiểm tra lại các khóa học trước khi thanh toán.</p>
     </div>
 
     <?php if($commerceFlash): ?>
@@ -58,66 +58,74 @@ $commerceFlash = commerce_pull_flash();
     $total = 0;
     
     if($result && $result->num_rows > 0): ?>
-    
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="grid md:grid-cols-[1fr_320px] gap-6">
+    <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         <!-- Cart items -->
         <div class="divide-y divide-slate-100">
         <?php while($row = $result->fetch_assoc()): 
             $total += $row['course_price'];
             $img_src = "../" . ltrim(str_replace('../', '', $row['course_img']), '/');
         ?>
-        <div class="flex items-center gap-5 p-6 hover:bg-slate-50/50 transition-colors group">
+        <div class="flex items-center gap-3 sm:gap-5 p-4 sm:p-6 hover:bg-slate-50/50 transition-colors group">
             <!-- Course Image -->
             <a href="../coursedetails.php?course_id=<?php echo $row['course_id']; ?>" class="shrink-0">
                 <img src="<?php echo $img_src; ?>" 
-                     class="w-24 h-16 rounded-xl object-cover shadow-sm" alt="Course">
+                     class="w-16 h-12 sm:w-24 sm:h-16 rounded-lg sm:rounded-xl object-cover shadow-sm" alt="Course">
             </a>
             <!-- Name and price -->
             <div class="flex-grow min-w-0">
                 <a href="../coursedetails.php?course_id=<?php echo $row['course_id']; ?>" 
-                   class="font-bold text-slate-900 hover:text-primary transition-colors line-clamp-2 text-sm md:text-base">
+                   class="font-bold text-slate-900 hover:text-primary transition-colors line-clamp-2 text-xs sm:text-sm md:text-base">
                     <?php echo htmlspecialchars($row['course_name']); ?>
                 </a>
                 <?php if(!empty($row['course_original_price'])): ?>
-                <p class="text-xs text-slate-400 line-through mt-1"><?php echo number_format($row['course_original_price']); ?> đ</p>
+                <p class="text-[10px] sm:text-xs text-slate-400 line-through mt-1"><?php echo number_format($row['course_original_price']); ?> đ</p>
                 <?php endif; ?>
             </div>
             <!-- Price -->
-            <p class="text-lg font-black text-red-600 shrink-0"><?php echo number_format($row['course_price']); ?> đ</p>
+            <p class="text-sm sm:text-lg font-black text-red-600 shrink-0"><?php echo number_format($row['course_price']); ?> đ</p>
             <!-- Remove -->
             <button onclick="removeFromCart(<?php echo $row['cart_id']; ?>)" 
-                    class="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100 hover:border-red-200"
+                    class="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all border border-slate-100 hover:border-red-200"
                     title="Xóa khỏi giỏ">
-                <i class="fas fa-trash-alt text-sm"></i>
+                <i class="fas fa-trash-alt text-xs sm:text-sm"></i>
             </button>
         </div>
         <?php endwhile; ?>
         </div>
+    </div>
 
-        <!-- Summary -->
-        <div class="bg-slate-50/80 p-6 border-t border-slate-100">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <p class="text-sm text-slate-500">Tổng thanh toán</p>
-                    <p class="text-3xl font-black text-primary mt-1"><?php echo number_format($total); ?> <span class="text-xl">đ</span></p>
-                </div>
-                <div class="text-right">
-                    <a href="myOrders.php" class="text-sm text-slate-500 hover:text-primary transition-colors flex items-center gap-1 justify-end mb-3">
-                        <i class="fas fa-receipt text-xs"></i> Xem đơn hàng của tôi
-                    </a>
-                    <a href="../courses.php" class="text-sm text-slate-500 hover:text-primary transition-colors flex items-center gap-1 justify-end mb-3">
-                        <i class="fas fa-plus text-xs"></i> Thêm khóa học
-                    </a>
-                    <form action="../checkout.php" method="post">
-                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
-                        <input type="hidden" name="checkout_type" value="cart">
-                        <button type="submit" 
-                                class="px-8 py-3.5 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
-                            <i class="fas fa-credit-card"></i> Thanh toán ngay
-                        </button>
-                    </form>
-                </div>
+        <!-- Summary sidebar -->
+        <div class="sticky top-24">
+        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-slate-50/80 p-5 sm:p-6">
+            <h3 class="font-bold text-slate-900 text-lg mb-4">Tổng đơn hàng</h3>
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-sm text-slate-500">Tạm tính</p>
+                <p class="text-sm font-bold text-slate-700"><?php echo number_format($total); ?> đ</p>
             </div>
+            <div class="flex items-center justify-between pt-3 border-t border-slate-200 mt-3">
+                <p class="text-base font-bold text-slate-900">Tổng thanh toán</p>
+                <p class="text-2xl font-black text-primary"><?php echo number_format($total); ?> <span class="text-base">đ</span></p>
+            </div>
+            <form action="../checkout.php" method="post" class="mt-5">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="checkout_type" value="cart">
+                <button type="submit" 
+                        class="w-full px-6 py-3.5 bg-primary text-white font-black rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 border-0">
+                    <i class="fas fa-credit-card"></i> Thanh toán ngay
+                </button>
+            </form>
+            <div class="mt-4 space-y-2">
+                <a href="myOrders.php" class="text-xs text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5">
+                    <i class="fas fa-receipt text-xs"></i> Xem đơn hàng của tôi
+                </a>
+                <a href="../courses.php" class="text-xs text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5">
+                    <i class="fas fa-plus text-xs"></i> Thêm khóa học
+                </a>
+            </div>
+        </div>
+        </div>
         </div>
     </div>
 

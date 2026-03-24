@@ -96,16 +96,16 @@ if (isset($stuLogEmail)) {
 }
 ?>
 
-<div class="max-w-6xl mx-auto px-6 py-12">
-    <div class="mb-8">
-        <h1 class="text-3xl font-black text-slate-900 flex items-center gap-3">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-3">
             <i class="fas fa-book-reader text-primary"></i> Khoa hoc cua toi
         </h1>
-        <p class="text-slate-500 mt-2">Theo doi tien do hoc tap, tiep tuc bai tiep theo va hoan thanh khoa hoc cua ban.</p>
+        <p class="text-sm sm:text-base text-slate-500 mt-2">Theo doi tien do hoc tap, tiep tuc bai tiep theo va hoan thanh khoa hoc cua ban.</p>
     </div>
 
     <?php if (!empty($cards)): ?>
-        <div class="space-y-5">
+        <div class="space-y-4 sm:space-y-5">
             <?php foreach ($cards as $card): ?>
                 <?php
                 $course = $card['course'];
@@ -136,7 +136,7 @@ if (isset($stuLogEmail)) {
                 $isCompletedCourse = $requiredTotal > 0 && $requiredCompleted >= $requiredTotal;
                 ?>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all flex flex-col md:flex-row">
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all flex flex-col md:flex-row">
                     <a href="watchcourse.php?course_id=<?php echo $courseId; ?>" class="md:w-56 shrink-0">
                         <img
                             src="<?php echo htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8'); ?>"
@@ -146,10 +146,10 @@ if (isset($stuLogEmail)) {
                         >
                     </a>
 
-                    <div class="flex flex-col flex-grow p-6">
+                    <div class="flex flex-col flex-grow p-4 sm:p-6">
                         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                             <div class="flex-grow">
-                                <h2 class="text-lg font-bold text-slate-900 line-clamp-2 mb-2">
+                                <h2 class="text-base sm:text-lg font-bold text-slate-900 line-clamp-2 mb-2">
                                     <?php echo htmlspecialchars($courseName, ENT_QUOTES, 'UTF-8'); ?>
                                 </h2>
                                 <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">
@@ -194,7 +194,7 @@ if (isset($stuLogEmail)) {
                             </div>
                         </div>
 
-                        <div class="mt-5 pt-4 border-t border-slate-100">
+                        <div class="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-100">
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 text-xs">
                                 <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                                     <p class="text-slate-500">Tien do</p>

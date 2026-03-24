@@ -64,6 +64,10 @@ FROM (
   FROM (SELECT COUNT(DISTINCT enrollment_status) AS cnt FROM enrollment) q
 
   UNION ALL
+  SELECT 'A11b_enrollment_non_active_exists', q.cnt, 1, 'At least one expired/revoked enrollment seeded'
+  FROM (SELECT COUNT(*) AS cnt FROM enrollment WHERE enrollment_status IN ('expired', 'revoked')) q
+
+  UNION ALL
   SELECT 'A12_live_status_diversity', q.cnt, 3, 'Live session status diversity exists'
   FROM (SELECT COUNT(DISTINCT session_status) AS cnt FROM live_session WHERE is_deleted = 0) q
 
